@@ -1,0 +1,8 @@
+[
+  {"gstin": "27AAPFU0939F1ZV", "name": "Shree Ganesh Traders Pvt Ltd", "state": "Maharashtra",
+   "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "29AAGCB7383J1Z4", "name": "Bharat Industrial Supplies", "state": "Karnataka",
+   "status": "active", "payment_terms": "Net 45"},
+  {"gstin": "24AABCT1332L1ZK", "name": "Gujarat Polymers Ltd", "state": "Gujarat",
+   "status": "blocked", "payment_terms": "Net 30"}
+]

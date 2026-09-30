@@ -76,7 +76,9 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 |---|---|---|
 | 1 Setup | done | Folder skeleton, venv, split requirements (runtime vs dev), typed `Settings` from `.env`, `/health`, ruff + pytest config, git repo with LF line endings |
 | 2 Upload + extraction | done | `POST /invoices/upload`, `GET /jobs/{id}`, `jobs` table, SHA-256 file cache, BackgroundTasks pipeline, PyMuPDF text + RapidOCR fallback, sample generator + OCR viewer script |
-| 3–10 | todo | LLM extraction → validators/agent → anomaly + router → SAP/review → data → eval → CI/Docker → deploy |
+| 3 LLM extraction | done | One Gemini call → `InvoiceFields` (Pydantic), escalation to stronger model on low confidence / bad JSON |
+| 4 Validators + agent | done | Pure validators (line items, subtotal, GST rate, CGST/SGST vs IGST, grand total, GSTIN regex + mod-36 checksum, duplicate hash), provider-agnostic tool-calling interface + Gemini impl, agent loop with iteration cap + deterministic backstop, vendor master JSON |
+| 5–10 | todo | anomaly (IsolationForest, real `flag_anomaly`) + router → SAP/review → data → eval → CI/Docker → deploy |
 
 ### Endpoints so far
 
@@ -84,7 +86,21 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 - `POST /invoices/upload` (multipart `file`) → `202 {job_id, status, cached, file_hash}`;
   `400` empty, `413` > 10 MB, `415` not PDF/PNG/JPEG
 - `GET /jobs/{job_id}` → status, `extraction_method` (`text`/`ocr`/`mixed`), `ocr_confidence`,
-  `page_count`, `extraction_ms`, `extracted_text`, `error`; `404` if unknown
+  `page_count`, `extraction_ms`, `extracted_text`, `error`, `fields` (LLM), `checks`
+  (`results` per tool key, `backfilled`, `error`), `agent_notes`, `agent_iterations`,
+  `agent_tokens`; `404` if unknown
+
+### Key files (Phases 3–4)
+
+- `app/llm/client.py` — `extract_invoice`: single extraction call + escalation
+- `app/llm/provider.py` — `ToolChatProvider`/`ChatSession` protocol, `ToolSpec`/`ToolCall`/
+  `ToolResult`/`ChatTurn`; `GeminiProvider` (manual function calling, AFC disabled)
+- `app/validators/` — `gstin.py`, `totals.py`, `duplicate.py`: pure functions, return
+  `{ok: True|False|None, detail}` (`None` = not checkable, missing data)
+- `app/agent/tools.py` — `TOOL_SPECS`, `run_tool` dispatcher, `find_vendor`, `check_duplicate`
+  (DB lookup on `jobs.dup_hash`); `flag_anomaly` is a stub until Phase 5
+- `app/agent/loop.py` — `run_agent(ctx, provider)`; `MAX_ITERATIONS = 6`
+- `data/vendors.json` — vendor master (`VENDORS_PATH`)
 
 ### Key files (Phases 1–2)
 
@@ -108,7 +124,7 @@ copy .env.example .env                # then fill GEMINI_API_KEY
 uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /docs
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\show_ocr.py data\samples\sample_scanned.png
-pytest -q                             # tests (~17 s; OCR slow; Gemini is mocked, no key needed)
+pytest -q                             # tests (~18 s; OCR slow; Gemini is mocked, no key needed)
 ruff check .                          # lint
 
 # after uploading, poll the job; `fields` holds the Gemini-extracted invoice
@@ -135,6 +151,20 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
 - **Gemini models** get retired for new users without warning (2.5-flash-lite 404'd); list with `client.models.list()`. Keep the `genai.Client` in a variable/global, or it is closed on GC.
 - **Schema via `create_all`, no migrations** (prototype). When a phase adds columns, delete
   `invoiceguard.db` locally.
+- **Agent tools take no numbers from the model.** Tools read the extracted `InvoiceFields` from
+  `ToolContext`; model args only pick *what* to check (`party`, lookup keys). The model's final
+  text is stored as `agent_notes` only — verdicts are the tool outputs.
+- **Deterministic backstop:** after the loop, any required tool the model skipped (or all of
+  them, if the LLM call failed) is run in code and listed in `checks.backfilled`.
+- **Tolerances:** ±₹1.00 for line/subtotal/grand-total; CGST must equal SGST within ₹0.01;
+  effective GST rate must be within 0.1 pp of a slab {0, 0.25, 3, 5, 12, 18, 28, 40}% (mixed-rate
+  invoices will fail `tax_rate` — prototype limitation).
+- **Intra/inter-state** = first 2 GSTIN digits of vendor vs buyer. Unknown buyer state → split
+  check skipped unless both CGST/SGST and IGST are charged.
+- **Duplicate hash** = SHA-256 of `GSTIN (else A-Z0-9 name) | A-Z0-9 invoice no | total:.2f`;
+  stored on `jobs.dup_hash`; matches exclude the current job and failed jobs. Identical file
+  bytes never get here (file cache returns the old job).
+- **Agent model:** `DEFAULT_MODEL` (no escalation for the agent loop).
 - Lint rule B008 is allowed for `fastapi.Depends/File/Query` (standard FastAPI idiom).
 
 ## Gotchas
@@ -155,6 +185,13 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
   import (settings are `lru_cache`d and the engine is module-level). Use
   `with TestClient(app)` so the lifespan (DB init + OCR load) runs. TestClient executes
   background tasks before returning, so jobs are already `done` in tests.
+- **Gemini function calling:** append the model's `candidates[0].content` to history as-is
+  (it carries thought signatures Gemini 3 requires), and echo `FunctionCall.id` back in the
+  `FunctionResponse`. Response dicts must be JSON-serializable.
+- **Tests:** `conftest.py` has an autouse fixture that replaces `loop.get_provider` with a
+  silent fake, so the agent never hits Gemini; override it per test with `monkeypatch`.
+- **Scanned-sample OCR test is mildly flaky** (random noise/rotation in `make_sample`), e.g.
+  `15,399.00` read as `15.399.00`. Rerun; seed it if it becomes annoying.
 - **Windows:** activation may need `Set-ExecutionPolicy -Scope Process RemoteSigned`;
   `.gitattributes` forces LF so files match Linux (Docker/CI/Render). Use `curl.exe`, not
   PowerShell's `curl` alias.

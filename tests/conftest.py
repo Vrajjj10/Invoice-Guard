@@ -38,3 +38,19 @@ def client():
 
     with TestClient(app) as c:  # "with" runs startup (DB init, OCR engine load)
         yield c
+
+
+@pytest.fixture(autouse=True)
+def _no_real_agent_llm(monkeypatch):
+    """Agent loop never reaches Gemini in tests; tests may override get_provider."""
+    from app.agent import loop
+    from app.llm.provider import ChatTurn
+
+    class _Silent:
+        def start(self, system, tools):
+            return self
+
+        def send(self, message):
+            return ChatTurn("No issues.")
+
+    monkeypatch.setattr(loop, "get_provider", lambda: _Silent())

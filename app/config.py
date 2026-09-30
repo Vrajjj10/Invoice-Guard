@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./invoiceguard.db"
     upload_dir: str = "data/uploads"
 
+    vendors_path: str = "data/vendors.json"
+
     # Mock SAP endpoint (swap for a real URL later)
     sap_base_url: str = "http://localhost:8000/mock-sap"
 

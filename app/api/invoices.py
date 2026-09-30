@@ -43,6 +43,10 @@ class JobResponse(BaseModel):
     llm_escalated: bool | None
     llm_tokens: int | None
     llm_ms: int | None
+    checks: dict | None
+    agent_notes: str | None
+    agent_iterations: int | None
+    agent_tokens: int | None
 
 
 @router.post("/invoices/upload", response_model=UploadResponse, status_code=202)
@@ -111,4 +115,8 @@ def get_job(job_id: str, db: Session = Depends(get_db)) -> JobResponse:
         llm_escalated=job.llm_escalated,
         llm_tokens=job.llm_tokens,
         llm_ms=job.llm_ms,
+        checks=json.loads(job.checks_json) if job.checks_json else None,
+        agent_notes=job.agent_notes,
+        agent_iterations=job.agent_iterations,
+        agent_tokens=job.agent_tokens,
     )

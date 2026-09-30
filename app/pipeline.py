@@ -1,12 +1,16 @@
-"""Background job processing. Extraction -> LLM fields; later phases add validation and routing."""
+"""Background job processing: extraction -> LLM fields -> agent validation."""
 
+import json
 import logging
 from pathlib import Path
 
+from app.agent.loop import run_agent
+from app.agent.tools import ToolContext
 from app.db.models import Job, JobStatus
 from app.db.session import SessionLocal
 from app.extraction.text import extract_text
 from app.llm.client import extract_invoice
+from app.validators import duplicate_hash
 
 log = logging.getLogger(__name__)
 
@@ -34,6 +38,20 @@ def process_job(job_id: str) -> None:
             job.llm_escalated = llm.escalated
             job.llm_tokens = llm.tokens
             job.llm_ms = llm.elapsed_ms
+            f = llm.fields
+            if f.is_invoice:
+                job.dup_hash = duplicate_hash(
+                    f.vendor_gstin, f.vendor_name, f.invoice_number, f.grand_total
+                )
+                agent = run_agent(ToolContext(f, db, job.id))
+                job.checks_json = json.dumps(
+                    {"results": agent.results, "backfilled": agent.backfilled,
+                     "error": agent.error},
+                    default=str,
+                )
+                job.agent_notes = agent.notes
+                job.agent_iterations = agent.iterations
+                job.agent_tokens = agent.tokens
             job.status = JobStatus.DONE
         except Exception as exc:  # record failure on the job instead of losing it
             log.exception("Job %s failed", job_id)

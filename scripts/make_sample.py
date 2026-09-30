@@ -29,7 +29,7 @@ def make_invoice_pdf(path: Path) -> None:
         "",
         "Invoice No: SGT/2026/0457        Invoice Date: 14-09-2026",
         "Bill To: Dimexon Components LLP, Mumbai, Maharashtra",
-        "Buyer GSTIN: 27AAACD1234E1Z5",
+        "Buyer GSTIN: 27AAACD1234E1Z9",
     ]
     y = h - 90
     for line in lines:

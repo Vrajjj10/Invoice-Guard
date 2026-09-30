@@ -46,6 +46,13 @@ class Job(Base):
     llm_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
     llm_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
+    # Validation / agent results (Phase 4)
+    dup_hash: Mapped[str | None] = mapped_column(String(64), index=True, nullable=True)
+    checks_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    agent_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    agent_iterations: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    agent_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_now, onupdate=_now
