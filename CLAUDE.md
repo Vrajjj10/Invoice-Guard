@@ -77,7 +77,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 1 Setup | done | Folder skeleton, venv, split requirements (runtime vs dev), typed `Settings` from `.env`, `/health`, ruff + pytest config, git repo with LF line endings |
 | 2 Upload + extraction | done | `POST /invoices/upload`, `GET /jobs/{id}`, `jobs` table, SHA-256 file cache, BackgroundTasks pipeline, PyMuPDF text + RapidOCR fallback, sample generator + OCR viewer script |
 | 3 LLM extraction | done | One Gemini call → `InvoiceFields` (Pydantic), escalation to stronger model on low confidence / bad JSON |
-| 4 Validators + agent | done | Pure validators (line items, subtotal, GST rate, CGST/SGST vs IGST, grand total, GSTIN regex + mod-36 checksum, duplicate hash), provider-agnostic tool-calling interface + Gemini impl, agent loop with iteration cap + deterministic backstop, vendor master JSON |
+| 4 Validators + agent | done | Pure validators (line items, subtotal, GST rate, CGST/SGST vs IGST, grand total, GSTIN regex + mod-36 checksum, duplicate hash), provider-agnostic tool-calling interface + Gemini impl, agent loop with iteration cap + deterministic backstop, vendor master JSON. Verified live on gemini-3.5-flash-lite: all 6 tools called in 1 iteration (~1.8k tokens), duplicate caught across digital vs scanned PDF |
 | 5–10 | todo | anomaly (IsolationForest, real `flag_anomaly`) + router → SAP/review → data → eval → CI/Docker → deploy |
 
 ### Endpoints so far
