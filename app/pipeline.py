@@ -6,11 +6,12 @@ from pathlib import Path
 
 from app.agent.loop import run_agent
 from app.agent.tools import ToolContext
-from app.db.models import Job, JobStatus
+from app.db.models import Decision, Job, JobStatus
 from app.db.session import SessionLocal
 from app.extraction.text import extract_text
 from app.llm.client import extract_invoice
 from app.routing import record_decision, route, send_alert
+from app.sap.posting import post_job
 from app.validators import duplicate_hash
 
 log = logging.getLogger(__name__)
@@ -57,6 +58,8 @@ def process_job(job_id: str) -> None:
             else:
                 routed = route(f, {})
             record_decision(db, job, routed)
+            if routed.decision == Decision.APPROVE:
+                routed, _ = post_job(db, job)  # SAP failure -> manual_review
             job.status = JobStatus.DONE
         except Exception as exc:  # record failure on the job instead of losing it
             log.exception("Job %s failed", job_id)

@@ -79,7 +79,8 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 3 LLM extraction | done | One Gemini call → `InvoiceFields` (Pydantic), escalation to stronger model on low confidence / bad JSON |
 | 4 Validators + agent | done | Pure validators (line items, subtotal, GST rate, CGST/SGST vs IGST, grand total, GSTIN regex + mod-36 checksum, duplicate hash), provider-agnostic tool-calling interface + Gemini impl, agent loop with iteration cap + deterministic backstop, vendor master JSON. Verified live on gemini-3.5-flash-lite: all 6 tools called in 1 iteration (~1.8k tokens), duplicate caught across digital vs scanned PDF |
 | 5 Anomaly + router | done | Per-vendor IsolationForest (log amount) trained by `scripts/train_anomaly.py` on seeded synthetic history (10 vendors); real `flag_anomaly` with cold-start rule (amount > 5x overall median) for vendors with < 20 invoices; router → approve / manual_review / reject with config thresholds; `audit_log` table; console/Slack alert for review + reject |
-| 6–10 | todo | mock SAP post on approve + review queue → data → eval → CI/Docker → deploy |
+| 6 Mock SAP + review queue | done | `/mock-sap/supplier-invoices` (validated, stored in `sap_documents`, fake 10-digit doc no. `51########`); `sap/payload.py` builder; `sap/client.py` (httpx, `SAP_BASE_URL`, retry w/ backoff, no retry on 4xx); `sap/posting.py` `post_job`; approved jobs auto-post in pipeline, SAP failure → `manual_review` with reason; `/reviews` queue (list/detail/approve/correct/reject) |
+| 7–10 | todo | data → eval → CI/Docker → deploy |
 
 ### Endpoints so far
 
@@ -90,6 +91,17 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
   `page_count`, `extraction_ms`, `extracted_text`, `error`, `fields` (LLM), `checks`
   (`results` per tool key, `backfilled`, `error`), `agent_notes`, `agent_iterations`,
   `agent_tokens`; `404` if unknown
+
+### Phase 6 endpoints
+
+- `POST /mock-sap/supplier-invoices` → `201 {document_number, fiscal_year, company_code, status}`;
+  `422` on missing/empty required field; idempotent per company+vendor+reference. `GET /mock-sap/supplier-invoices/{doc}`
+- `GET /reviews?status=pending|approved|rejected` → queue (jobs that ever hit manual_review)
+- `GET /reviews/{id}` → `fields` (original), `corrected_fields`, `corrections`, `reasons`, `checks`, `sap_doc_number`, `sap_error`, `audit_trail`
+- `POST /reviews/{id}/approve` → posts to SAP (`502` + stays pending on failure); `/correct` body `{"fields": {...partial}}`
+  → stores original vs corrected, re-runs validators (no LLM), returns re-route preview, stays pending; `/reject` body `{"reason"}`.
+  `409` unless pending
+- Config: `SAP_BASE_URL`, `SAP_COMPANY_CODE`, `SAP_GL_ACCOUNT`, `SAP_TAX_CODE`, `SAP_MAX_ATTEMPTS` (3), `SAP_RETRY_DELAY` (0.5 s, doubled)
 
 ### Key files (Phase 5)
 
@@ -184,6 +196,11 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
   (`ok: None`) does not block. Reject reasons also list review reasons.
 - **Anomaly:** one IsolationForest per vendor on `log(amount)` (contamination 0.02); score = `-score_samples`.
   Prototype limitation: trained on synthetic data, amount-only, no retraining from real jobs.
+- **Review/SAP:** `jobs.review_status` (pending/approved/rejected) is set when a job routes to manual_review;
+  `fields_json` is never overwritten — corrections go to `corrected_fields_json` (+ `corrections_json` diff) and SAP
+  posts the corrected values. Reviewer approve is a human override: validators are not re-enforced at approve.
+  Audit decisions: approve / manual_review / reject / `corrected`. Payload vendor = GSTIN (else name); posting date = today.
+  Delete local `invoiceguard.db` after pulling Phase 6 (new columns, no migrations).
 - **Agent model:** `DEFAULT_MODEL` (no escalation for the agent loop).
 - Lint rule B008 is allowed for `fastapi.Depends/File/Query` (standard FastAPI idiom).
 

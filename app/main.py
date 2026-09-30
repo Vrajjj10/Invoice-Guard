@@ -6,9 +6,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.invoices import router as invoices_router
+from app.api.reviews import router as reviews_router
 from app.config import get_settings
 from app.db.session import init_db
 from app.extraction.ocr import load_engine
+from app.sap.mock import router as mock_sap_router
 
 settings = get_settings()
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -28,6 +30,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(invoices_router)
+app.include_router(reviews_router)
+app.include_router(mock_sap_router)
 
 
 @app.get("/health")

@@ -36,6 +36,12 @@ class Settings(BaseSettings):
 
     # Mock SAP endpoint (swap for a real URL later)
     sap_base_url: str = "http://localhost:8000/mock-sap"
+    sap_company_code: str = "1000"
+    sap_gl_account: str = "400000"
+    sap_tax_code: str = "V1"
+    sap_timeout: float = 10.0
+    sap_max_attempts: int = 3
+    sap_retry_delay: float = 0.5  # seconds, doubled per retry
 
 
 @lru_cache

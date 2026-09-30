@@ -30,7 +30,7 @@ REQUIRED_CALLS = [
 ]
 
 
-def _key(name: str, args: dict) -> str:
+def tool_key(name: str, args: dict) -> str:
     return f"{name}:{args['party']}" if name == "validate_gstin" else name
 
 
@@ -64,7 +64,7 @@ def run_agent(ctx: ToolContext, provider: ToolChatProvider | None = None) -> Age
                 if call.name == "validate_gstin" and args.get("party") not in ("vendor", "buyer"):
                     args["party"] = "vendor"
                 out = run_tool(call.name, args, ctx)
-                res.results[_key(call.name, args)] = out
+                res.results[tool_key(call.name, args)] = out
                 res.trace.append({"tool": call.name, "args": args, "output": out})
                 outputs.append(ToolResult(call, json.loads(json.dumps(out, default=str))))
             turn = session.send(outputs)
@@ -75,7 +75,7 @@ def run_agent(ctx: ToolContext, provider: ToolChatProvider | None = None) -> Age
         res.error = f"{type(exc).__name__}: {exc}"[:300]
 
     for name, args in REQUIRED_CALLS:  # deterministic backstop
-        key = _key(name, args)
+        key = tool_key(name, args)
         if key not in res.results:
             res.results[key] = run_tool(name, args, ctx)
             res.backfilled.append(key)

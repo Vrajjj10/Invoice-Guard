@@ -26,6 +26,27 @@ class Decision:
     REJECT = "reject"
 
 
+class ReviewStatus:
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+
+
+class SapDocument(Base):
+    """Documents posted to the mock SAP endpoint."""
+
+    __tablename__ = "sap_documents"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    document_number: Mapped[str] = mapped_column(String(10), unique=True, index=True)
+    fiscal_year: Mapped[int] = mapped_column(Integer)
+    company_code: Mapped[str] = mapped_column(String(4))
+    vendor: Mapped[str] = mapped_column(String(40))
+    reference: Mapped[str] = mapped_column(String(40))
+    payload_json: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class AuditLog(Base):
     __tablename__ = "audit_log"
 
@@ -73,6 +94,14 @@ class Job(Base):
 
     # Routing (Phase 5)
     decision: Mapped[str | None] = mapped_column(String(20), nullable=True)
+
+    # Review queue + SAP (Phase 6)
+    review_status: Mapped[str | None] = mapped_column(String(20), index=True, nullable=True)
+    corrected_fields_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    corrections_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    sap_doc_number: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    sap_posted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    sap_error: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(

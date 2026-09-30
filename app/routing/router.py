@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.db.models import AuditLog, Decision, Job
+from app.db.models import AuditLog, Decision, Job, ReviewStatus
 from app.llm.schema import InvoiceFields
 
 
@@ -75,6 +75,8 @@ def route(fields: InvoiceFields, results: dict[str, dict]) -> RouteResult:
 def record_decision(db: Session, job: Job, result: RouteResult) -> AuditLog:
     """Set the decision on the job and add an audit row (commit left to the caller)."""
     job.decision = result.decision
+    if result.decision == Decision.MANUAL_REVIEW and job.review_status is None:
+        job.review_status = ReviewStatus.PENDING
     row = AuditLog(job_id=job.id, decision=result.decision, reasons=json.dumps(result.reasons),
                    confidence=result.confidence, model=job.llm_model)
     db.add(row)
