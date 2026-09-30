@@ -70,12 +70,87 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 - Tests never call the real Anthropic API (mock the client).
 - Be honest about limitations; this is a prototype.
 
-## Commands
+## Progress
+
+| Phase | Status | What it built |
+|---|---|---|
+| 1 Setup | done | Folder skeleton, venv, split requirements (runtime vs dev), typed `Settings` from `.env`, `/health`, ruff + pytest config, git repo with LF line endings |
+| 2 Upload + extraction | done | `POST /invoices/upload`, `GET /jobs/{id}`, `jobs` table, SHA-256 file cache, BackgroundTasks pipeline, PyMuPDF text + RapidOCR fallback, sample generator + OCR viewer script |
+| 3–10 | todo | LLM extraction → validators/agent → anomaly + router → SAP/review → data → eval → CI/Docker → deploy |
+
+### Endpoints so far
+
+- `GET /health` → `{"status":"ok",...}`
+- `POST /invoices/upload` (multipart `file`) → `202 {job_id, status, cached, file_hash}`;
+  `400` empty, `413` > 10 MB, `415` not PDF/PNG/JPEG
+- `GET /jobs/{job_id}` → status, `extraction_method` (`text`/`ocr`/`mixed`), `ocr_confidence`,
+  `page_count`, `extraction_ms`, `extracted_text`, `error`; `404` if unknown
+
+### Key files (Phases 1–2)
+
+- `app/extraction/text.py` — `detect_file_type`, `clean_text`, `extract_text` (+ row regrouping)
+- `app/extraction/ocr.py` — RapidOCR singleton (`load_engine`) and `run_ocr`
+- `app/pipeline.py` — `process_job(job_id)`: the background task; later phases extend it
+- `app/api/invoices.py` — upload + job routes, cache lookup
+- `app/db/session.py`, `app/db/models.py` — engine/session, `Job` table
+- `scripts/make_sample.py` — one GST invoice as digital PDF + scanned-style PDF/PNG
+- `scripts/show_ocr.py` — print extraction output for files
+
+## How to run
 
 ```powershell
-.\.venv\Scripts\Activate.ps1          # activate venv (Windows PowerShell)
+cd invoiceguard
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned   # if activation is blocked
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-uvicorn app.main:app --reload         # run API at http://127.0.0.1:8000 (docs: /docs)
-pytest -q                             # run tests
+copy .env.example .env                # then fill ANTHROPIC_API_KEY
+
+uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /docs
+python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
+python scripts\show_ocr.py data\samples\sample_scanned.png
+pytest -q                             # tests (~13 s; OCR tests are the slow part)
 ruff check .                          # lint
+
+# upload from the shell
+curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoices/upload
 ```
+
+## Decisions
+
+- **Scanned-page threshold:** a PDF page with < 30 chars of embedded text (`MIN_PAGE_CHARS`) is
+  rendered at 200 DPI and OCR'd. Limits: 10 pages, 12 000 chars of text to LLM, 10 MB upload.
+- **Row regrouping:** both PyMuPDF words and RapidOCR boxes are regrouped into visual rows by
+  vertical centre, then sorted left→right. A horizontal gap > 15 pt becomes a double space
+  (column separator). This keeps table rows like `Steel Bolts M8  7318  500  4.50  2,250.00`
+  on one line for the LLM.
+- **`ocr_confidence` meaning:** mean RapidOCR line score over OCR'd lines; `1.0` when all
+  pages had embedded text; `0.0` when OCR ran but found nothing.
+- **File type by magic bytes**, not filename or content-type header.
+- **Cache:** an upload whose SHA-256 matches an existing non-failed job returns that job
+  (`cached: true`); failed jobs are re-processed on re-upload. Files stored as
+  `data/uploads/<sha256>.<ext>`.
+- **Schema via `create_all`, no migrations** (prototype). When a phase adds columns, delete
+  `invoiceguard.db` locally.
+- Lint rule B008 is allowed for `fastapi.Depends/File/Query` (standard FastAPI idiom).
+
+## Gotchas
+
+- **PyMuPDF `get_text("text")` puts every table cell on its own line** — that's why we use
+  `get_text("words")` + row regrouping instead.
+- **`clean_text` must not collapse double spaces**; they're column separators. It collapses 3+.
+- **RapidOCR drops spaces between words** on the default model ("ShreeGaneshTraders");
+  numbers, GSTINs and invoice numbers survive. Leave it to the LLM; don't "fix" with regex.
+- **RapidOCR is slow on CPU:** ~4–7 s per scanned page at 200 DPI. First option if too slow:
+  lower `RENDER_DPI` to 150.
+- **RapidOCR wants BGR `ndarray`s** (OpenCV convention); PyMuPDF pixmaps are RGB(A), so
+  `_pixmap_to_array` drops alpha and flips channels. Image uploads are passed as raw bytes.
+- **`numpy<2.0` pin** is required by rapidocr-onnxruntime/onnxruntime.
+- **SQLite needs `check_same_thread=False`** because BackgroundTasks run in a threadpool.
+  Background tasks open their own `SessionLocal()`; never pass the request's session.
+- **Tests:** `tests/conftest.py` sets `DATABASE_URL`/`UPLOAD_DIR` to a temp dir *before* app
+  import (settings are `lru_cache`d and the engine is module-level). Use
+  `with TestClient(app)` so the lifespan (DB init + OCR load) runs. TestClient executes
+  background tasks before returning, so jobs are already `done` in tests.
+- **Windows:** activation may need `Set-ExecutionPolicy -Scope Process RemoteSigned`;
+  `.gitattributes` forces LF so files match Linux (Docker/CI/Render). Use `curl.exe`, not
+  PowerShell's `curl` alias.
