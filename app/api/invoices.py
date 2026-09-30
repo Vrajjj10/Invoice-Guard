@@ -1,6 +1,7 @@
 """Upload + job status endpoints."""
 
 import hashlib
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
@@ -36,6 +37,12 @@ class JobResponse(BaseModel):
     page_count: int | None
     extraction_ms: int | None
     extracted_text: str | None
+    fields: dict | None
+    llm_confidence: float | None
+    llm_model: str | None
+    llm_escalated: bool | None
+    llm_tokens: int | None
+    llm_ms: int | None
 
 
 @router.post("/invoices/upload", response_model=UploadResponse, status_code=202)
@@ -98,4 +105,10 @@ def get_job(job_id: str, db: Session = Depends(get_db)) -> JobResponse:
         page_count=job.page_count,
         extraction_ms=job.extraction_ms,
         extracted_text=job.extracted_text,
+        fields=json.loads(job.fields_json) if job.fields_json else None,
+        llm_confidence=job.llm_confidence,
+        llm_model=job.llm_model,
+        llm_escalated=job.llm_escalated,
+        llm_tokens=job.llm_tokens,
+        llm_ms=job.llm_ms,
     )

@@ -12,12 +12,12 @@ class Settings(BaseSettings):
     environment: str = "dev"
 
     # Secrets: never hardcoded, always from .env
-    anthropic_api_key: str = ""
+    gemini_api_key: str = ""
     slack_webhook_url: str = ""
 
     # LLM models: cheap default, stronger model only for escalation
-    default_model: str = "claude-haiku-4-5-20251001"
-    escalation_model: str = "claude-sonnet-5-5"
+    default_model: str = "gemini-3.5-flash-lite"
+    escalation_model: str = "gemini-3.5-flash"
 
     # Storage
     database_url: str = "sqlite:///./invoiceguard.db"

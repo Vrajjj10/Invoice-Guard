@@ -1,4 +1,4 @@
-"""Background job processing. Later phases add LLM extraction, validation and routing."""
+"""Background job processing. Extraction -> LLM fields; later phases add validation and routing."""
 
 import logging
 from pathlib import Path
@@ -6,6 +6,7 @@ from pathlib import Path
 from app.db.models import Job, JobStatus
 from app.db.session import SessionLocal
 from app.extraction.text import extract_text
+from app.llm.client import extract_invoice
 
 log = logging.getLogger(__name__)
 
@@ -26,6 +27,13 @@ def process_job(job_id: str) -> None:
             job.ocr_confidence = result.ocr_confidence
             job.page_count = result.page_count
             job.extraction_ms = result.elapsed_ms
+            llm = extract_invoice(result.text, result.ocr_confidence)
+            job.fields_json = llm.fields.model_dump_json()
+            job.llm_confidence = llm.fields.confidence
+            job.llm_model = llm.model
+            job.llm_escalated = llm.escalated
+            job.llm_tokens = llm.tokens
+            job.llm_ms = llm.elapsed_ms
             job.status = JobStatus.DONE
         except Exception as exc:  # record failure on the job instead of losing it
             log.exception("Job %s failed", job_id)

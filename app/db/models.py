@@ -3,7 +3,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, Float, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.session import Base
@@ -37,6 +37,14 @@ class Job(Base):
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     extraction_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # LLM results (Phase 3)
+    fields_json: Mapped[str | None] = mapped_column(Text, nullable=True)
+    llm_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    llm_model: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    llm_escalated: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    llm_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    llm_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(

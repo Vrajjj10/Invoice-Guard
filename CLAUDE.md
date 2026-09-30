@@ -23,7 +23,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | `app/config.py` | Typed settings from `.env` (pydantic-settings) |
 | `app/api/` | HTTP routes: upload, jobs, review queue |
 | `app/extraction/` | PyMuPDF + RapidOCR text extraction, OCR confidence |
-| `app/llm/` | Anthropic client, prompts, Pydantic schema, model escalation |
+| `app/llm/` | Gemini client (google-genai), prompts, Pydantic schema, model escalation |
 | `app/validators/` | Deterministic checks: totals, tax, GSTIN, duplicates |
 | `app/agent/` | Tool definitions + tool-calling agent loop |
 | `app/ml/` | IsolationForest anomaly detector (inference) |
@@ -31,7 +31,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | `app/sap/` | SAP payload builder (separate) + mock SAP route |
 | `app/db/` | SQLAlchemy models/session (SQLite) |
 | `scripts/` | Training, synthetic data generation, eval harness |
-| `tests/` | pytest; Claude client is always mocked |
+| `tests/` | pytest; LLM client is always mocked |
 | `data/samples/` | Synthetic invoices + ground-truth JSON |
 | `models/` | Trained model artifacts (git-ignored) |
 
@@ -45,13 +45,13 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
   **once at startup**, never per request.
 - **Send TEXT to the LLM**, cleaned and trimmed. Fall back to sending the image only when OCR
   confidence is low.
-- **Models:** default `claude-haiku-4-5-20251001`; escalate to `claude-sonnet-5-5` only for
-  low-confidence results. Use prompt caching on system prompt + schema.
+- **Models:** default `gemini-3.5-flash-lite`; escalate to `gemini-3.5-flash` only for
+  low-confidence results. Keep system prompt + schema short and stable (Gemini implicit caching).
 - **One LLM call** for extraction + confidence. Strict JSON, validated with Pydantic. Short
   reason strings.
 - **Tool calling:** tools `check_duplicate`, `validate_totals`, `validate_gstin`,
-  `lookup_vendor`, `flag_anomaly`, with a proper agent loop (handle `tool_use` ->
-  `tool_result` until `end_turn`, with an iteration cap).
+  `lookup_vendor`, `flag_anomaly`, with a proper agent loop (handle function_call ->
+  function_response until no more calls, with an iteration cap).
 - **Code checks:** line items sum to subtotal, tax math, grand total, GSTIN regex + checksum,
   CGST/SGST (intra-state) vs IGST (inter-state) logic, duplicate hash of
   vendor + invoice number + amount.
@@ -67,7 +67,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 
 - Small steps; run code and fix errors before moving on.
 - Never hardcode secrets — use `.env` (git-ignored) and `.env.example`.
-- Tests never call the real Anthropic API (mock the client).
+- Tests never call the real Gemini API (mock the client).
 - Be honest about limitations; this is a prototype.
 
 ## Progress
@@ -103,13 +103,16 @@ cd invoiceguard
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned   # if activation is blocked
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-copy .env.example .env                # then fill ANTHROPIC_API_KEY
+copy .env.example .env                # then fill GEMINI_API_KEY
 
 uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /docs
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\show_ocr.py data\samples\sample_scanned.png
-pytest -q                             # tests (~13 s; OCR tests are the slow part)
+pytest -q                             # tests (~17 s; OCR slow; Gemini is mocked, no key needed)
 ruff check .                          # lint
+
+# after uploading, poll the job; `fields` holds the Gemini-extracted invoice
+curl.exe http://127.0.0.1:8000/jobs/<job_id>
 
 # upload from the shell
 curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoices/upload
@@ -129,6 +132,7 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
 - **Cache:** an upload whose SHA-256 matches an existing non-failed job returns that job
   (`cached: true`); failed jobs are re-processed on re-upload. Files stored as
   `data/uploads/<sha256>.<ext>`.
+- **Gemini models** get retired for new users without warning (2.5-flash-lite 404'd); list with `client.models.list()`. Keep the `genai.Client` in a variable/global, or it is closed on GC.
 - **Schema via `create_all`, no migrations** (prototype). When a phase adds columns, delete
   `invoiceguard.db` locally.
 - Lint rule B008 is allowed for `fastapi.Depends/File/Query` (standard FastAPI idiom).
