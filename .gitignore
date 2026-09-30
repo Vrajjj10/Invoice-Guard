@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Environments & secrets
+.venv/
+.env
+
+# Local data
+*.db
+data/uploads/*
+!data/uploads/.gitkeep
+models/*.joblib
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
