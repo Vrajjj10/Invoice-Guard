@@ -150,7 +150,7 @@ uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /d
 python scripts	rain_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\show_ocr.py data\samples\sample_scanned.png
-pytest -q                             # tests (~18 s; OCR slow; Gemini is mocked, no key needed)
+pytest -q                             # tests (~22 s; OCR slow; Gemini is mocked, no key needed)
 ruff check .                          # lint
 
 # after uploading, poll the job; `fields` holds the Gemini-extracted invoice
