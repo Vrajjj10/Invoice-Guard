@@ -20,6 +20,24 @@ class JobStatus:
     FAILED = "failed"
 
 
+class Decision:
+    APPROVE = "approve"
+    MANUAL_REVIEW = "manual_review"
+    REJECT = "reject"
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    job_id: Mapped[str] = mapped_column(String(36), index=True)
+    decision: Mapped[str] = mapped_column(String(20))
+    reasons: Mapped[str] = mapped_column(Text)  # JSON list of strings
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    model: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+
 class Job(Base):
     __tablename__ = "jobs"
 
@@ -52,6 +70,9 @@ class Job(Base):
     agent_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     agent_iterations: Mapped[int | None] = mapped_column(Integer, nullable=True)
     agent_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Routing (Phase 5)
+    decision: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     updated_at: Mapped[datetime] = mapped_column(

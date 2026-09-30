@@ -1,4 +1,4 @@
-"""Background job processing: extraction -> LLM fields -> agent validation."""
+"""Background job processing: extraction -> LLM fields -> agent validation -> routing."""
 
 import json
 import logging
@@ -10,6 +10,7 @@ from app.db.models import Job, JobStatus
 from app.db.session import SessionLocal
 from app.extraction.text import extract_text
 from app.llm.client import extract_invoice
+from app.routing import record_decision, route, send_alert
 from app.validators import duplicate_hash
 
 log = logging.getLogger(__name__)
@@ -52,11 +53,17 @@ def process_job(job_id: str) -> None:
                 job.agent_notes = agent.notes
                 job.agent_iterations = agent.iterations
                 job.agent_tokens = agent.tokens
+                routed = route(f, agent.results)
+            else:
+                routed = route(f, {})
+            record_decision(db, job, routed)
             job.status = JobStatus.DONE
         except Exception as exc:  # record failure on the job instead of losing it
             log.exception("Job %s failed", job_id)
             job.status = JobStatus.FAILED
             job.error = f"{type(exc).__name__}: {exc}"[:500]
         db.commit()
+        if job.decision:
+            send_alert(job.id, job.decision, routed.reasons)
     finally:
         db.close()

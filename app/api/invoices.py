@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.db.models import Job, JobStatus
+from app.db.models import AuditLog, Job, JobStatus
 from app.db.session import get_db
 from app.extraction.text import UnsupportedFileError, detect_file_type
 from app.pipeline import process_job
@@ -47,6 +47,8 @@ class JobResponse(BaseModel):
     agent_notes: str | None
     agent_iterations: int | None
     agent_tokens: int | None
+    decision: str | None
+    decision_reasons: list[str] | None
 
 
 @router.post("/invoices/upload", response_model=UploadResponse, status_code=202)
@@ -119,4 +121,13 @@ def get_job(job_id: str, db: Session = Depends(get_db)) -> JobResponse:
         agent_notes=job.agent_notes,
         agent_iterations=job.agent_iterations,
         agent_tokens=job.agent_tokens,
+        decision=job.decision,
+        decision_reasons=_latest_reasons(db, job.id),
     )
+
+
+def _latest_reasons(db: Session, job_id: str) -> list[str] | None:
+    row = db.scalars(
+        select(AuditLog).where(AuditLog.job_id == job_id).order_by(AuditLog.id.desc())
+    ).first()
+    return json.loads(row.reasons) if row else None

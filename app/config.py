@@ -25,6 +25,15 @@ class Settings(BaseSettings):
 
     vendors_path: str = "data/vendors.json"
 
+    # Anomaly detector
+    anomaly_model_path: str = "models/anomaly.joblib"
+    anomaly_min_history: int = 20  # fewer samples -> cold-start rule
+    anomaly_cold_start_multiple: float = 5.0  # flag if amount > multiple * overall median
+
+    # Router thresholds
+    approve_min_confidence: float = 0.85  # below -> manual review
+    reject_below_confidence: float = 0.40  # below -> reject
+
     # Mock SAP endpoint (swap for a real URL later)
     sap_base_url: str = "http://localhost:8000/mock-sap"
 

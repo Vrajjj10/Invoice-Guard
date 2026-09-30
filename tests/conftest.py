@@ -9,6 +9,7 @@ import pytest
 _tmp = Path(tempfile.mkdtemp(prefix="invoiceguard-test-"))
 os.environ["DATABASE_URL"] = f"sqlite:///{(_tmp / 'test.db').as_posix()}"
 os.environ["UPLOAD_DIR"] = str(_tmp / "uploads")
+os.environ["ANOMALY_MODEL_PATH"] = str(_tmp / "none.joblib")  # untrained by default
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 

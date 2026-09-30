@@ -14,6 +14,7 @@ from app.config import get_settings
 from app.db.models import Job, JobStatus
 from app.llm.provider import ToolSpec
 from app.llm.schema import InvoiceFields
+from app.ml.anomaly import flag_anomaly
 from app.validators import duplicate_hash, validate_gstin, validate_totals
 from app.validators.gstin import normalize_gstin
 
@@ -108,7 +109,7 @@ def run_tool(name: str, args: dict, ctx: ToolContext) -> dict:
             return find_vendor(args.get("gstin") or f.vendor_gstin,
                                args.get("name") or f.vendor_name, load_vendors())
         if name == "flag_anomaly":
-            return {"ok": None, "anomaly": None, "detail": "not implemented (Phase 5)"}
+            return flag_anomaly(f.vendor_gstin, f.vendor_name, f.grand_total)
         return {"error": f"unknown tool {name}"}
     except Exception as exc:  # surface to the model instead of crashing the loop
         return {"error": f"{type(exc).__name__}: {exc}"}

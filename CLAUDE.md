@@ -78,7 +78,8 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 2 Upload + extraction | done | `POST /invoices/upload`, `GET /jobs/{id}`, `jobs` table, SHA-256 file cache, BackgroundTasks pipeline, PyMuPDF text + RapidOCR fallback, sample generator + OCR viewer script |
 | 3 LLM extraction | done | One Gemini call → `InvoiceFields` (Pydantic), escalation to stronger model on low confidence / bad JSON |
 | 4 Validators + agent | done | Pure validators (line items, subtotal, GST rate, CGST/SGST vs IGST, grand total, GSTIN regex + mod-36 checksum, duplicate hash), provider-agnostic tool-calling interface + Gemini impl, agent loop with iteration cap + deterministic backstop, vendor master JSON. Verified live on gemini-3.5-flash-lite: all 6 tools called in 1 iteration (~1.8k tokens), duplicate caught across digital vs scanned PDF |
-| 5–10 | todo | anomaly (IsolationForest, real `flag_anomaly`) + router → SAP/review → data → eval → CI/Docker → deploy |
+| 5 Anomaly + router | done | Per-vendor IsolationForest (log amount) trained by `scripts/train_anomaly.py` on seeded synthetic history (10 vendors); real `flag_anomaly` with cold-start rule (amount > 5x overall median) for vendors with < 20 invoices; router → approve / manual_review / reject with config thresholds; `audit_log` table; console/Slack alert for review + reject |
+| 6–10 | todo | mock SAP post on approve + review queue → data → eval → CI/Docker → deploy |
 
 ### Endpoints so far
 
@@ -89,6 +90,18 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
   `page_count`, `extraction_ms`, `extracted_text`, `error`, `fields` (LLM), `checks`
   (`results` per tool key, `backfilled`, `error`), `agent_notes`, `agent_iterations`,
   `agent_tokens`; `404` if unknown
+
+### Key files (Phase 5)
+
+- `app/ml/anomaly.py` — `flag_anomaly(gstin, name, amount)` → `{ok, anomaly, score, method: model|rule|none, reason}`;
+  loads `models/anomaly.joblib` (bundle: per-vendor models, counts, overall median). Untrained → `ok: None`
+- `scripts/train_anomaly.py` — seeded synthetic history + training; `python scripts/train_anomaly.py`
+- `app/routing/router.py` — `route(fields, agent_results)` → `RouteResult(decision, reasons, confidence)`;
+  `record_decision` sets `jobs.decision` + adds `audit_log` row
+- `app/routing/alerts.py` — `send_alert`: log warning; POST to `SLACK_WEBHOOK_URL` if set (never raises)
+- Config: `APPROVE_MIN_CONFIDENCE` (0.85), `REJECT_BELOW_CONFIDENCE` (0.40), `ANOMALY_MODEL_PATH`,
+  `anomaly_min_history` (20), `anomaly_cold_start_multiple` (5.0)
+- `GET /jobs/{id}` now also returns `decision` and `decision_reasons`
 
 ### Key files (Phases 3–4)
 
@@ -122,6 +135,7 @@ pip install -r requirements-dev.txt
 copy .env.example .env                # then fill GEMINI_API_KEY
 
 uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /docs
+python scripts	rain_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\show_ocr.py data\samples\sample_scanned.png
 pytest -q                             # tests (~18 s; OCR slow; Gemini is mocked, no key needed)
@@ -164,6 +178,12 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
 - **Duplicate hash** = SHA-256 of `GSTIN (else A-Z0-9 name) | A-Z0-9 invoice no | total:.2f`;
   stored on `jobs.dup_hash`; matches exclude the current job and failed jobs. Identical file
   bytes never get here (file cache returns the old job).
+- **Routing rules:** reject = not an invoice, duplicate, blocked/inactive vendor, confidence < 0.40.
+  manual_review = confidence < 0.85, unknown vendor, name/GSTIN mismatch, any failed/errored/uncheckable
+  totals or vendor-GSTIN check, anomaly flagged. Otherwise approve. Buyer-GSTIN or anomaly "not checkable"
+  (`ok: None`) does not block. Reject reasons also list review reasons.
+- **Anomaly:** one IsolationForest per vendor on `log(amount)` (contamination 0.02); score = `-score_samples`.
+  Prototype limitation: trained on synthetic data, amount-only, no retraining from real jobs.
 - **Agent model:** `DEFAULT_MODEL` (no escalation for the agent loop).
 - Lint rule B008 is allowed for `fastapi.Depends/File/Query` (standard FastAPI idiom).
 
