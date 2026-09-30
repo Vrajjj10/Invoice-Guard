@@ -147,7 +147,7 @@ pip install -r requirements-dev.txt
 copy .env.example .env                # then fill GEMINI_API_KEY
 
 uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /docs
-python scripts	rain_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
+python scripts\train_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\show_ocr.py data\samples\sample_scanned.png
 pytest -q                             # tests (~22 s; OCR slow; Gemini is mocked, no key needed)
