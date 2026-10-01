@@ -22,3 +22,11 @@ Thumbs.db
 
 data/eval/
 eval_results.json.tmp
+
+# Extra safety
+venv/
+env/
+.env.*
+!.env.example
+*.log
+*.sqlite3
