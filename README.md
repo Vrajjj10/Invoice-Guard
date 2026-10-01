@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Vrajjj10/Invoice-Guard/actions/workflows/ci.yml/badge.svg)](https://github.com/Vrajjj10/Invoice-Guard/actions/workflows/ci.yml)
 
+**Live demo: https://invoice-guard-df71.onrender.com/** (free tier: the first load can take about a minute; the demo key is needed to run invoices)
+
 AI accounts-payable automation agent for B2B invoices (prototype): OCR/text extraction, one LLM
 call for fields, deterministic validators, tool-calling agent, routing, mock SAP posting.
 
