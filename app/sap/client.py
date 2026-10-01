@@ -2,6 +2,7 @@
 
 import logging
 import time
+from urllib.parse import urlparse
 
 import httpx
 
@@ -18,12 +19,18 @@ class SapError(Exception):
         self.retryable = retryable
 
 
+def _is_local(url: str) -> bool:
+    return urlparse(url).hostname in {"localhost", "127.0.0.1", "::1"}
+
+
 def post_supplier_invoice(payload: dict) -> str:
     """One POST attempt; returns the SAP document number."""
     s = get_settings()
     url = s.sap_base_url.rstrip("/") + "/supplier-invoices"
+    # The bundled mock lives in this app and is key-protected; never send our key elsewhere
+    headers = {"X-API-Key": s.demo_api_key} if s.demo_api_key and _is_local(url) else {}
     try:
-        r = httpx.post(url, json=payload, timeout=s.sap_timeout)
+        r = httpx.post(url, json=payload, headers=headers, timeout=s.sap_timeout)
     except httpx.HTTPError as exc:
         raise SapError(f"{type(exc).__name__}: {exc}") from exc
     if r.status_code >= 500:

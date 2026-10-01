@@ -101,7 +101,9 @@ async def upload_invoice(
     return UploadResponse(job_id=job.id, status=job.status, cached=False, file_hash=file_hash)
 
 
-@router.get("/jobs/{job_id}", response_model=JobResponse)
+@router.get(
+    "/jobs/{job_id}", response_model=JobResponse, dependencies=[Depends(require_api_key)]
+)
 def get_job(job_id: str, db: Session = Depends(get_db)) -> JobResponse:
     job = db.get(Job, job_id)
     if job is None:

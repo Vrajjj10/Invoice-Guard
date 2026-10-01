@@ -10,8 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.db.models import SapDocument
 from app.db.session import get_db
+from app.security import require_api_key
 
-router = APIRouter(prefix="/mock-sap", tags=["mock-sap"])
+router = APIRouter(
+    prefix="/mock-sap", tags=["mock-sap"], dependencies=[Depends(require_api_key)]
+)
 
 
 class SapItem(BaseModel):

@@ -20,9 +20,9 @@ def _sap_via_testclient(client, monkeypatch):
     """Route the SAP client's HTTP calls into the in-process app; no sleeping on retries."""
     calls = []
 
-    def fake_post(url, json=None, timeout=None):
+    def fake_post(url, json=None, headers=None, timeout=None):
         calls.append(json)
-        return client.post(urlparse(url).path, json=json)
+        return client.post(urlparse(url).path, json=json, headers=headers)
 
     monkeypatch.setattr(sap_client.httpx, "post", fake_post)
     monkeypatch.setattr(get_settings(), "sap_retry_delay", 0)
@@ -301,3 +301,18 @@ def test_post_supplier_invoice_ok(monkeypatch):
         sap_client.httpx, "post", lambda *a, **k: _Resp(201, {"document_number": "51X"})
     )
     assert sap_client.post_supplier_invoice({}) == "51X"
+
+
+def test_approve_posts_to_key_protected_mock(client, monkeypatch):
+    """With auth on, the internal SAP client sends the key and the post still succeeds."""
+    s = get_settings()
+    monkeypatch.setattr(s, "demo_api_key", "secret")
+    monkeypatch.setattr(s, "environment", "production")
+    monkeypatch.setattr(s, "sap_base_url", "http://localhost:8000/mock-sap")
+    h = {"X-API-Key": "secret"}
+    jid = _job(invoice_number="K-1")
+    r = client.post(f"/reviews/{jid}/approve", headers=h)
+    assert r.status_code == 200
+    doc = r.json()["sap_doc_number"]
+    assert client.get(f"/mock-sap/supplier-invoices/{doc}").status_code == 401
+    assert client.get(f"/mock-sap/supplier-invoices/{doc}", headers=h).status_code == 200

@@ -84,3 +84,38 @@ def test_failed_auth_does_not_consume_rate_limit(client, monkeypatch):
     for _ in range(3):
         assert _upload(client).status_code == 401
     assert _upload(client, headers={"X-API-Key": "secret"}).status_code == 415
+
+
+def test_jobs_and_mock_sap_require_key(client):
+    for method, path in [
+        ("get", "/jobs/x"),
+        ("get", "/mock-sap/supplier-invoices/x"),
+        ("post", "/mock-sap/supplier-invoices"),
+    ]:
+        assert getattr(client, method)(path).status_code == 401
+    h = {"X-API-Key": "secret"}
+    assert client.get("/jobs/x", headers=h).status_code == 404
+    assert client.get("/mock-sap/supplier-invoices/x", headers=h).status_code == 404
+
+
+def test_sap_client_sends_key_to_local_mock_only(monkeypatch):
+    from app.sap import client as sap_client
+
+    seen = []
+
+    class R:
+        status_code = 201
+        text = ""
+
+        def json(self):
+            return {"document_number": "51X"}
+
+    monkeypatch.setattr(
+        sap_client.httpx, "post", lambda url, **k: seen.append(k["headers"]) or R()
+    )
+    s = get_settings()
+    monkeypatch.setattr(s, "sap_base_url", "http://localhost:10000/mock-sap")
+    assert sap_client.post_supplier_invoice({}) == "51X"
+    monkeypatch.setattr(s, "sap_base_url", "https://sap.example.com/api")
+    sap_client.post_supplier_invoice({})
+    assert seen == [{"X-API-Key": "secret"}, {}]

@@ -4,10 +4,12 @@
     python scripts/run_eval.py                          # default model
     python scripts/run_eval.py --model gemini-3.5-flash # escalation model, same files
     python scripts/run_eval.py --limit 5 --delay 6
+    python scripts/run_eval.py --scanned-only           # re-run only scans (after OCR changes)
     python scripts/run_eval.py --report-only            # rebuild EVAL.md from eval_results.json
 
 Gemini calls are throttled (--delay), retried with exponential backoff on 429/5xx, and cached on
-disk by sha256(file) + model, so re-runs spend no quota. Only the SAP HTTP post is stubbed.
+disk by sha256(file) + model (+ OCR settings when the text came from OCR), so re-runs spend no
+quota. Only the SAP HTTP post is stubbed.
 Digital and scanned sets run on separate fresh DBs (a scan duplicates its original).
 """
 
@@ -38,7 +40,7 @@ from app.config import get_settings  # noqa: E402
 from app.db import models  # noqa: E402
 from app.db.session import Base, SessionLocal, engine  # noqa: E402
 from app.extraction.ocr import load_engine  # noqa: E402
-from app.extraction.text import detect_file_type  # noqa: E402
+from app.extraction.text import RENDER_DPI, detect_file_type  # noqa: E402
 from app.llm import client as llm_client  # noqa: E402
 from app.llm import provider as llm_provider  # noqa: E402
 from app.llm.client import LLMResult  # noqa: E402
@@ -113,10 +115,11 @@ class Cache:
 
     current_hash = ""
     model = ""
+    ocr_tag = ""  # set per file once we know OCR produced the text
 
     @classmethod
     def path(cls) -> Path:
-        return CACHE_DIR / f"{cls.current_hash}_{cls.model}.json"
+        return CACHE_DIR / f"{cls.current_hash}_{cls.model}{cls.ocr_tag}.json"
 
     @classmethod
     def load(cls) -> dict:
@@ -135,7 +138,15 @@ TH: Throttle | None = None
 STATS = {"cache_hits": 0, "cache_misses": 0}
 
 
+def ocr_settings() -> dict:
+    return {"max_side_px": get_settings().ocr_max_side_len, "pdf_dpi": RENDER_DPI}
+
+
 def cached_extract(text: str, ocr_confidence: float | None = None) -> LLMResult:
+    # OCR output (hence the LLM input) depends on the OCR settings; text PDFs don't
+    o = ocr_settings()
+    used_ocr = ocr_confidence is not None and ocr_confidence < 1.0
+    Cache.ocr_tag = f"_ocr{o['max_side_px']}_{o['pdf_dpi']}" if used_ocr else ""
     hit = Cache.load().get("llm")
     if hit:
         STATS["cache_hits"] += 1
@@ -246,6 +257,7 @@ def run_file(rel: str, truth: dict) -> dict:
     data = path.read_bytes()
     fhash = hashlib.sha256(data).hexdigest()
     Cache.current_hash = fhash
+    Cache.ocr_tag = ""
     db = SessionLocal()
     job = models.Job(file_hash=fhash, filename=rel, file_type=detect_file_type(data),
                      stored_path=str(path))
@@ -372,7 +384,8 @@ def run_eval(args) -> None:
     truth = json.loads((DATA / "ground_truth.json").read_text(encoding="utf-8"))["files"]
     digital = sorted(k for k, v in truth.items() if "scan_of" not in v)
     scanned = sorted(k for k, v in truth.items() if "scan_of" in v)
-    order = (digital + scanned)[: args.limit or None]
+    order = scanned if args.scanned_only else (digital + scanned)
+    order = order[: args.limit or None]
 
     global TH
     th = TH = Throttle(args.delay, args.retries)
@@ -399,12 +412,17 @@ def run_eval(args) -> None:
               f"got={row['actual_decision']} ({row['latency_ms']} ms, {row['tokens']} tok)",
               flush=True)
 
+    store = json.loads(RESULTS.read_text(encoding="utf-8")) if RESULTS.exists() else {"runs": {}}
+    prev = store["runs"].get(model)
+    if args.scanned_only and prev:  # digital files don't use OCR: keep their rows, swap the scans
+        rows = [r for r in prev["files"] if r["file"] not in scanned] + rows
     run = {"model": model, "timestamp": datetime.now(UTC).isoformat(timespec="seconds"),
            "limit": args.limit, "delay_s": args.delay,
            "cache_hits": STATS["cache_hits"], "cache_misses": STATS["cache_misses"],
+           "ocr_settings": ocr_settings(),
+           "scanned_only_rerun": bool(args.scanned_only),
            "api_calls": th.api_calls, "api_retries": th.retried,
            "metrics": metrics(rows, model, price), "files": rows}
-    store = json.loads(RESULTS.read_text(encoding="utf-8")) if RESULTS.exists() else {"runs": {}}
     store["runs"][model] = run
     if not args.model or "default_model" not in store:
         store["default_model"] = model
@@ -465,7 +483,9 @@ def write_report(store: dict) -> None:
             continue
         L.append(f"- `{m}`: {r['metrics']['files']} files, {r['timestamp']}, "
                  f"{r['cache_misses']} fresh LLM extractions / {r['cache_hits']} cache hits, "
-                 f"{r['api_retries']} API retries")
+                 f"{r['api_retries']} API retries"
+                 + (f", scans OCR'd at max side {r['ocr_settings']['max_side_px']} px,"
+                    f" PDF DPI {r['ocr_settings']['pdf_dpi']}" if r.get("ocr_settings") else ""))
     L += ["", "## Summary", "", "| Metric | " + " | ".join(f"`{m}`" for m in models_) + " |",
           "|---|" + "---|" * len(models_)]
 
@@ -541,7 +561,20 @@ def write_report(store: dict) -> None:
                      f"{r['actual_decision']} | {bad} | {why} |")
         L.append("")
 
-    L += ["## Limitations", "",
+    L += ["## OCR settings (scanned files)", "",
+          "Scans were re-run after the Phase 10 memory cut (cache key includes the OCR settings). "
+          "Digital PDFs use embedded text, so these settings do not affect them.", "",
+          "| | Phase 8 | Phase 10 (current) |", "|---|---|---|",
+          "| Max image side / PDF render DPI | 2000 px / 200 DPI | 1280 px / 150 DPI |",
+          "| Peak RAM while OCR'ing scans (Windows) | ~705 MB | ~470 MB |",
+          "| Scanned decisions correct | 8/8 | 7/8 |",
+          "| Avg OCR confidence (scanned) | 0.9705 | 0.9712 |",
+          "| Key-token recall (scanned) | 0.9524 | 0.9048 |",
+          "| `invoice_number` accuracy (all 30 files) | 100% | 96.7% (29/30) |", "",
+          "Cost of the smaller OCR size: `inv_02_scan.jpg` lost its invoice number, so a clean "
+          "invoice was held for manual review (a false flag, not a false approve). Raise "
+          "`OCR_MAX_SIDE_LEN` if RAM allows; one scan failing is a sample of one.", "",
+          "## Limitations", "",
           "- **Model comparison covers fewer files.** The free tier allows 20 requests/day/model "
           "for `gemini-3.5-flash` (about 7 invoices at 3 calls each), so the escalation run is "
           "limited to the files it could finish; the default model is re-scored on the same "
@@ -578,6 +611,8 @@ def main() -> None:
                     help="min seconds between Gemini API calls (free-tier RPM)")
     ap.add_argument("--retries", type=int, default=5, help="retries per call on 429/5xx")
     ap.add_argument("--price", type=float, help="assumed blended USD per 1M tokens")
+    ap.add_argument("--scanned-only", action="store_true",
+                    help="run only the scanned files and merge them into the stored run")
     ap.add_argument("--report-only", action="store_true")
     args = ap.parse_args()
     if args.report_only:
