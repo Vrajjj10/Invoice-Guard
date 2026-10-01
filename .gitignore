@@ -30,3 +30,4 @@ env/
 !.env.example
 *.log
 *.sqlite3
+.coverage
