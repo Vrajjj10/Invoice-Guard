@@ -146,8 +146,3 @@ def test_sap_base_url_defaults_to_own_mock_on_port(monkeypatch):
         ("http://127.0.0.1:8000/mock-sap/supplier-invoices", {"X-API-Key": "secret"}),
     ]
 
-
-def test_root_redirects_to_docs(client):
-    r = client.get("/", follow_redirects=False)
-    assert r.status_code in (302, 307)
-    assert r.headers["location"] == "/docs"

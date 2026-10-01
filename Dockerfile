@@ -19,6 +19,7 @@ RUN pip install -r requirements.txt
 COPY app ./app
 COPY scripts/train_anomaly.py ./scripts/train_anomaly.py
 COPY data/vendors.json ./data/vendors.json
+COPY data/samples ./data/samples
 
 # Anomaly model is trained on synthetic data at build time (artifact is git-ignored)
 RUN mkdir -p models data/uploads \

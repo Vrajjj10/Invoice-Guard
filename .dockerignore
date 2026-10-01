@@ -15,7 +15,7 @@ __pycache__
 data/uploads
 data/eval
 data/invoices
-data/samples
+data/samples/sample_*
 models
 tests
 EVAL.md

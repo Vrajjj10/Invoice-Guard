@@ -48,6 +48,8 @@ class JobResponse(BaseModel):
     agent_tokens: int | None
     decision: str | None
     decision_reasons: list[str] | None
+    sap_doc_number: str | None
+    stages: list[dict]
 
 
 @router.post(
@@ -130,6 +132,8 @@ def get_job(job_id: str, db: Session = Depends(get_db)) -> JobResponse:
         agent_tokens=job.agent_tokens,
         decision=job.decision,
         decision_reasons=_latest_reasons(db, job.id),
+        sap_doc_number=job.sap_doc_number,
+        stages=build_stages(db, job),
     )
 
 
@@ -138,3 +142,48 @@ def _latest_reasons(db: Session, job_id: str) -> list[str] | None:
         select(AuditLog).where(AuditLog.job_id == job_id).order_by(AuditLog.id.desc())
     ).first()
     return json.loads(row.reasons) if row else None
+
+
+STAGE_KEYS = ["upload", "ocr", "ai", "validation", "decision", "sap"]
+
+
+def build_stages(db: Session, job: Job) -> list[dict]:
+    """Pipeline progress for the UI: [{key, status, ms}].
+
+    status is one of done|active|pending|failed|skipped.
+
+    Built from columns the pipeline already fills plus the audit log (no extra bookkeeping).
+    """
+    fields = json.loads(job.fields_json) if job.fields_json else None
+    is_invoice = bool(fields and fields.get("is_invoice"))
+    has_decision = db.scalars(
+        select(AuditLog.id).where(AuditLog.job_id == job.id).limit(1)
+    ).first() is not None
+    done = {
+        "upload": True,
+        "ocr": job.extraction_ms is not None,
+        "ai": job.fields_json is not None,
+        "validation": job.checks_json is not None or (fields is not None and not is_invoice),
+        "decision": has_decision,
+        "sap": job.sap_doc_number is not None or job.status == JobStatus.DONE,
+    }
+    ms = {"ocr": job.extraction_ms, "ai": job.llm_ms}
+    skipped = set()
+    if fields is not None and not is_invoice:
+        skipped.add("validation")
+    if job.status == JobStatus.DONE and job.sap_doc_number is None:
+        skipped.add("sap")
+
+    out, current_set = [], False
+    for key in STAGE_KEYS:
+        if key in skipped:
+            status = "skipped"
+        elif done[key]:
+            status = "done"
+        elif current_set or job.status == JobStatus.PENDING:
+            status = "pending"
+        else:
+            current_set = True
+            status = "failed" if job.status == JobStatus.FAILED else "active"
+        out.append({"key": key, "status": status, "ms": ms.get(key)})
+    return out

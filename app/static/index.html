@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InvoiceGuard</title>
+<meta name="description" content="AI accounts-payable agent: invoices in, verified decisions out.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root, :root[data-theme="dark"] {
+  --bg: #0a0f1f; --bg-glow: rgba(124, 108, 255, .18);
+  --card: rgba(22, 29, 54, .62); --card-solid: #131a33; --border: rgba(160, 175, 230, .16);
+  --shadow: 0 10px 30px rgba(2, 6, 20, .45);
+  --text: #e9edfa; --muted: #a3adc9; --faint: #6f7a9c;
+  --accent: #8b7dff; --accent-strong: #6a5cf5; --accent-ink: #ffffff; --accent-soft: rgba(139, 125, 255, .14);
+  --ok: #34d399; --ok-soft: rgba(52, 211, 153, .13);
+  --warn: #fbbf24; --warn-soft: rgba(251, 191, 36, .13);
+  --bad: #f87171; --bad-soft: rgba(248, 113, 113, .13);
+  --track: rgba(160, 175, 230, .16);
+  --input: rgba(8, 12, 28, .55);
+}
+:root[data-theme="light"] {
+  --bg: #f3f5fc; --bg-glow: rgba(99, 85, 240, .12);
+  --card: rgba(255, 255, 255, .78); --card-solid: #ffffff; --border: rgba(40, 52, 110, .14);
+  --shadow: 0 10px 28px rgba(40, 52, 110, .12);
+  --text: #12172b; --muted: #4c5573; --faint: #6b7493;
+  --accent: #4f46e5; --accent-strong: #4338ca; --accent-ink: #ffffff; --accent-soft: rgba(79, 70, 229, .09);
+  --ok: #047857; --ok-soft: rgba(4, 120, 87, .1);
+  --warn: #92400e; --warn-soft: rgba(217, 119, 6, .13);
+  --bad: #b91c1c; --bad-soft: rgba(185, 28, 28, .09);
+  --track: rgba(40, 52, 110, .13);
+  --input: rgba(255, 255, 255, .9);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; min-height: 100vh; color: var(--text); background: var(--bg);
+  background-image: radial-gradient(900px 480px at 50% -120px, var(--bg-glow), transparent 70%);
+  background-repeat: no-repeat;
+  font: 400 15px/1.55 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased; transition: background-color .25s, color .25s;
+}
+.mono { font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+a { color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 8px; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+section { margin-top: 44px; }
+h2 { font-size: 13px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 14px; }
+.card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); padding: 22px;
+  transition: border-color .2s, background-color .25s;
+}
+.btn {
+  font: 600 14px/1 Inter, system-ui, sans-serif; border-radius: 10px; padding: 11px 16px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--card-solid); color: var(--text);
+  transition: transform .15s, background-color .2s, border-color .2s, opacity .2s;
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primary { background: var(--accent-strong); border-color: transparent; color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { background: var(--accent); }
+.btn.danger { color: var(--bad); }
+.btn.sm { padding: 8px 12px; font-size: 13px; }
+
+/* header */
+header.top { display: flex; align-items: center; gap: 14px; padding: 18px 0; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -.01em; margin-right: auto; }
+.logo { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-strong)); display: grid; place-items: center; color: #fff; }
+.keybox { display: flex; align-items: center; gap: 8px; }
+.keybox input {
+  width: 190px; font: 400 13px "JetBrains Mono", ui-monospace, Consolas, monospace; color: var(--text);
+  background: var(--input); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.keybox input.need { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.keybox input[aria-invalid="true"] { border-color: var(--bad); }
+.iconbtn { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; border-radius: 10px; }
+
+/* hero */
+.hero { text-align: center; padding: 34px 0 6px; }
+.hero h1 { font-size: clamp(32px, 6vw, 54px); line-height: 1.08; letter-spacing: -.03em; margin: 0; font-weight: 700; }
+.hero h1 span { background: linear-gradient(120deg, var(--accent), #c4b5fd 80%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { color: var(--muted); font-size: clamp(16px, 2.4vw, 19px); margin: 14px auto 26px; max-width: 560px; }
+.drop {
+  max-width: 720px; margin: 0 auto; padding: 38px 20px; border: 2px dashed var(--border); border-radius: 20px; cursor: pointer;
+  background: var(--card); transition: border-color .2s, background-color .2s, transform .2s;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.drop:hover { border-color: var(--accent); }
+.drop.drag { border-color: var(--accent); background: var(--accent-soft); animation: pulse-border 1.1s ease-in-out infinite; }
+.drop svg { color: var(--accent); }
+.drop strong { font-size: 16px; }
+.drop small { color: var(--muted); }
+.drop.busy { opacity: .6; pointer-events: none; }
+@keyframes pulse-border { 0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); } 50% { box-shadow: 0 0 0 10px var(--accent-soft); } }
+
+/* stats */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.stat { padding: 18px 20px; }
+.stat .v { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+.stat .l { color: var(--muted); font-size: 13px; }
+.skel { border-radius: 8px; background: linear-gradient(90deg, var(--track), transparent 50%, var(--track)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+/* samples */
+.samples { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 14px; }
+.sample { text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; font: inherit; color: inherit; padding: 18px; }
+.sample:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-2px); }
+.sample:disabled { opacity: .55; cursor: not-allowed; }
+.sample { transition: border-color .2s, transform .2s; }
+.sample .t { font-weight: 600; }
+.sample .c { color: var(--muted); font-size: 13px; }
+.sample .f { color: var(--faint); font-size: 12px; margin-top: auto; }
+.tag { align-self: flex-start; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; padding: 3px 8px; border-radius: 99px; }
+.tag.ok { background: var(--ok-soft); color: var(--ok); } .tag.warn { background: var(--warn-soft); color: var(--warn); } .tag.bad { background: var(--bad-soft); color: var(--bad); }
+
+/* stepper */
+.stepper { list-style: none; margin: 0; padding: 0; display: flex; }
+.step { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 0 4px; }
+.step:not(:last-child)::after { content: ""; position: absolute; top: 18px; left: calc(50% + 24px); right: calc(-50% + 24px); height: 2px; background: var(--track); transition: background-color .3s; }
+.step.done:not(:last-child)::after { background: var(--ok); }
+.node { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 15px; background: var(--card-solid); border: 2px solid var(--track); color: var(--faint); transition: all .25s; }
+.step.active .node { border-color: var(--accent); color: var(--accent); animation: glow 1.4s ease-in-out infinite; }
+.step.done .node { border-color: var(--ok); background: var(--ok-soft); color: var(--ok); }
+.step.failed .node { border-color: var(--bad); background: var(--bad-soft); color: var(--bad); }
+.step.skipped .node { border-style: dashed; }
+.step .lab { font-size: 13px; font-weight: 600; line-height: 1.3; }
+.step .sub { font-size: 12px; color: var(--muted); min-height: 16px; }
+.step.pending .lab { color: var(--muted); }
+@keyframes glow { 0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft), 0 0 8px 0 var(--accent-soft); } 50% { box-shadow: 0 0 0 7px var(--accent-soft), 0 0 22px 2px var(--accent); } }
+.pnote { margin: 18px 0 0; color: var(--muted); font-size: 13px; text-align: center; min-height: 20px; }
+
+/* result */
+.banner { display: flex; align-items: center; gap: 22px; padding: 24px; border-radius: 18px; border: 1px solid; flex-wrap: wrap; }
+.banner.ok { background: var(--ok-soft); border-color: var(--ok); } .banner.warn { background: var(--warn-soft); border-color: var(--warn); } .banner.bad { background: var(--bad-soft); border-color: var(--bad); }
+.banner .txt { flex: 1; min-width: 220px; }
+.banner h3 { margin: 0; font-size: clamp(20px, 3.4vw, 28px); letter-spacing: -.02em; }
+.banner.ok h3 { color: var(--ok); } .banner.warn h3 { color: var(--warn); } .banner.bad h3 { color: var(--bad); }
+.banner p { margin: 6px 0 0; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.chip { display: inline-flex; flex-direction: column; padding: 8px 12px; border-radius: 12px; background: var(--card-solid); border: 1px solid var(--border); max-width: 100%; }
+.chip b { font-size: 13px; } .chip span { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.chip.warn b { color: var(--warn); } .chip.bad b { color: var(--bad); }
+.ring { position: relative; width: 92px; height: 92px; flex: none; }
+.ring svg { transform: rotate(-90deg); }
+.ring .trk { stroke: var(--track); } .ring .arc { transition: stroke-dashoffset .8s ease; }
+.ring .num { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; font-weight: 700; font-size: 20px; line-height: 1; }
+.ring .num small { display: block; font-size: 10px; font-weight: 500; color: var(--muted); margin-top: 3px; letter-spacing: .06em; text-transform: uppercase; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.preview { padding: 12px; display: flex; flex-direction: column; min-height: 420px; }
+.preview iframe, .preview img { width: 100%; flex: 1; min-height: 400px; border: 0; border-radius: 12px; background: #fff; object-fit: contain; }
+.preview .none { margin: auto; color: var(--muted); }
+.ftable { width: 100%; border-collapse: collapse; }
+.ftable th { text-align: left; font-weight: 500; color: var(--muted); font-size: 13px; padding: 9px 10px 9px 0; white-space: nowrap; vertical-align: top; }
+.ftable td { padding: 9px 0; border-top: 1px solid var(--border); font-size: 14px; }
+.ftable th { border-top: 1px solid var(--border); }
+.ftable tr:first-child th, .ftable tr:first-child td { border-top: 0; }
+.ftable td.val { overflow-wrap: anywhere; padding-right: 12px; }
+.ftable td.cf { width: 112px; }
+.ftable tr.low { background: var(--warn-soft); }
+.ftable tr.low td.val { color: var(--warn); font-weight: 600; }
+.bar { height: 6px; border-radius: 99px; background: var(--track); overflow: hidden; }
+.bar i { display: block; height: 100%; border-radius: 99px; background: var(--ok); transition: width .6s ease; }
+.bar.low i { background: var(--warn); }
+.cfl { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.ctitle { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.ctitle h3 { margin: 0; font-size: 15px; } .ctitle span { font-size: 12px; color: var(--muted); }
+.items { margin-top: 16px; width: 100%; border-collapse: collapse; font-size: 13px; }
+.items th, .items td { padding: 6px 8px 6px 0; text-align: right; border-top: 1px solid var(--border); } .items th:first-child, .items td:first-child { text-align: left; }
+.items th { color: var(--muted); font-weight: 500; }
+details.audit { margin-top: 16px; } details.audit summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.tl { list-style: none; margin: 14px 0 0; padding: 0 0 0 18px; border-left: 2px solid var(--track); display: flex; flex-direction: column; gap: 14px; }
+.tl li { position: relative; } .tl li::before { content: ""; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.tl .when { color: var(--muted); font-size: 12px; } .tl .why { color: var(--muted); font-size: 13px; margin: 2px 0 0; padding-left: 16px; }
+
+/* review queue */
+.rq { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+.rcard { display: flex; flex-direction: column; gap: 10px; }
+.rcard h3 { margin: 0; font-size: 16px; }
+.rmeta { color: var(--muted); font-size: 13px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; }
+.edit { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.edit label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.edit label.wide { grid-column: 1 / -1; }
+.edit input { font: 400 13px Inter, sans-serif; color: var(--text); background: var(--input); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; width: 100%; min-width: 0; }
+.valres { font-size: 13px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); }
+.empty { text-align: center; color: var(--muted); padding: 34px 20px; }
+.empty b { display: block; color: var(--text); margin-bottom: 4px; }
+
+/* toasts */
+#toasts { position: fixed; right: 16px; bottom: 16px; z-index: 50; display: flex; flex-direction: column; gap: 10px; width: min(360px, calc(100vw - 32px)); }
+.toast { padding: 12px 14px; border-radius: 12px; background: var(--card-solid); border: 1px solid var(--border); border-left: 4px solid var(--accent); box-shadow: var(--shadow); font-size: 14px; animation: tin .2s ease-out; }
+.toast.ok { border-left-color: var(--ok); } .toast.warn { border-left-color: var(--warn); } .toast.bad { border-left-color: var(--bad); }
+@keyframes tin { from { opacity: 0; transform: translateY(8px); } }
+
+footer { margin: 64px 0 36px; text-align: center; color: var(--muted); font-size: 13px; display: flex; gap: 8px 18px; justify-content: center; flex-wrap: wrap; }
+[hidden] { display: none !important; }
+
+@media (max-width: 860px) { .stats { grid-template-columns: repeat(2, 1fr); } .split { grid-template-columns: 1fr; } }
+@media (max-width: 720px) {
+  .stepper { flex-direction: column; gap: 0; }
+  .step { flex-direction: row; text-align: left; gap: 14px; padding: 0 0 22px; align-items: flex-start; }
+  .step:last-child { padding-bottom: 0; }
+  .step:not(:last-child)::after { top: 38px; bottom: 2px; left: 17px; right: auto; width: 2px; height: auto; }
+  .step .sub { min-height: 0; }
+  .keybox { width: 100%; order: 3; } .keybox input { flex: 1; width: auto; }
+}
+@media (max-width: 480px) { .wrap { padding: 0 16px; } .card { padding: 16px; } .edit { grid-template-columns: 1fr; } .banner { padding: 18px; } .stat .v { font-size: 24px; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand"><span class="logo" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.4 8-8 9-4.6-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5L15.5 10"/></svg></span>InvoiceGuard</div>
+    <div class="keybox">
+      <label class="sr" for="key">Demo API key</label>
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="Enter demo key">
+    </div>
+    <button class="btn iconbtn" id="theme" type="button" aria-label="Switch to light theme"></button>
+  </header>
+
+  <main>
+    <div class="hero">
+      <h1>Invoice<span>Guard</span></h1>
+      <p>Invoices in. Verified decisions out.</p>
+      <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload an invoice: drop a file here or press Enter to browse">
+        <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 15v3a2 2 0 002 2h12a2 2 0 002-2v-3"/></svg>
+        <strong>Drop an invoice here, or click to browse</strong>
+        <small>PDF, PNG or JPG, up to 5 MB</small>
+        <input id="file" type="file" accept="application/pdf,image/png,image/jpeg" hidden>
+      </div>
+    </div>
+
+    <section aria-labelledby="h-stats">
+      <h2 id="h-stats">Overview</h2>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section aria-labelledby="h-samples">
+      <h2 id="h-samples">Try a sample</h2>
+      <div class="samples" id="samples"></div>
+    </section>
+
+    <section aria-labelledby="h-pipe" id="pipe-sec">
+      <h2 id="h-pipe">Live pipeline</h2>
+      <div class="card">
+        <ol class="stepper" id="stepper" aria-label="Processing stages"></ol>
+        <p class="pnote" id="pnote" role="status"></p>
+      </div>
+      <div id="result" aria-live="polite"></div>
+    </section>
+
+    <section aria-labelledby="h-rev">
+      <h2 id="h-rev">Review queue</h2>
+      <div class="rq" id="rq"></div>
+    </section>
+  </main>
+
+  <footer>
+    <span>Prototype on synthetic data</span>
+    <a href="https://github.com/Vrajjj10/Invoice-Guard" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <a href="https://github.com/Vrajjj10/Invoice-Guard#readme" target="_blank" rel="noopener noreferrer">README</a>
+    <a href="/docs">API docs</a>
+  </footer>
+</div>
+<div id="toasts" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const MAX_BYTES = 5 * 1024 * 1024;
+const STAGES = [
+  ["upload", "Upload"], ["ocr", "Text extraction (OCR)"], ["ai", "AI extraction"],
+  ["validation", "Validation"], ["decision", "Decision"], ["sap", "SAP"],
+];
+const SAMPLES = {
+  "1_clean.pdf": { title: "Clean invoice", cap: "Everything checks out. Auto-approved and posted to SAP.", tag: ["ok", "Approve"] },
+  "2_clean_cgst_sgst.pdf": { title: "Intra-state GST", cap: "Valid CGST and SGST split from a second vendor.", tag: ["ok", "Approve"] },
+  "3_wrong_total.pdf": { title: "Wrong total", cap: "Grand total overstated by 500. Flagged for a human.", tag: ["warn", "Review"] },
+  "4_duplicate_of_1.pdf": { title: "Duplicate", cap: "Same vendor, number and total as sample 1. Run that first.", tag: ["bad", "Reject"] },
+  "5_not_invoice.pdf": { title: "Not an invoice", cap: "A bank-detail change letter. Rejected as a non-invoice.", tag: ["bad", "Reject"] },
+};
+const FIELDS = [
+  ["vendor_name", "Vendor"], ["vendor_gstin", "Vendor GSTIN", "mono", "gstin:vendor"], ["buyer_gstin", "Buyer GSTIN", "mono", "gstin:buyer"],
+  ["invoice_number", "Invoice no.", "mono"], ["invoice_date", "Date"], ["currency", "Currency"],
+  ["subtotal", "Subtotal", "money", "totals"], ["cgst", "CGST", "money", "totals"], ["sgst", "SGST", "money", "totals"],
+  ["igst", "IGST", "money", "totals"], ["grand_total", "Grand total", "money", "totals"],
+];
+const EDITABLE = [
+  ["vendor_name", "Vendor", "text", true], ["vendor_gstin", "Vendor GSTIN", "text"], ["invoice_number", "Invoice no.", "text"],
+  ["invoice_date", "Date (YYYY-MM-DD)", "text"], ["subtotal", "Subtotal", "number"], ["cgst", "CGST", "number"],
+  ["sgst", "SGST", "number"], ["igst", "IGST", "number"], ["grand_total", "Grand total", "number"],
+];
+const LOW = 0.7;
+
+/* ---------- helpers (server data only ever goes through textContent / text nodes) ---------- */
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "text") e.textContent = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else e.setAttribute(k, v === true ? "" : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return e;
+}
+function sv(tag, attrs, ...kids) {
+  const e = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  for (const [k, v] of Object.entries(attrs || {})) e.setAttribute(k, v);
+  for (const kid of kids) e.append(kid);
+  return e;
+}
+const store = {
+  get(s, k) { try { return s.getItem(k); } catch { return null; } },
+  set(s, k, v) { try { s.setItem(k, v); } catch { /* storage unavailable */ } },
+};
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+function fmtMs(ms) { return ms == null ? "" : ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`; }
+function money(v, cur) {
+  if (v == null || v === "") return null;
+  try { return new Intl.NumberFormat("en-IN", { style: "currency", currency: cur || "INR" }).format(v); }
+  catch { return Number(v).toLocaleString("en-IN", { minimumFractionDigits: 2 }); }
+}
+function toast(msg, kind) {
+  const t = h("div", { class: `toast ${kind || ""}`, text: msg });
+  $("toasts").append(t);
+  setTimeout(() => t.remove(), kind === "bad" ? 7000 : 4500);
+}
+
+/* ---------- API ---------- */
+class ApiError extends Error { constructor(kind, msg, status) { super(msg); this.kind = kind; this.status = status; } }
+const getKey = () => store.get(sessionStorage, "ig_key") || "";
+
+async function api(path, opts = {}) {
+  const headers = { ...(opts.headers || {}) };
+  const key = getKey();
+  if (key) headers["X-API-Key"] = key;
+  let res;
+  try { res = await fetch(path, { ...opts, headers }); }
+  catch { throw new ApiError("wake", "Service is waking up. This can take about a minute.", 0); }
+  if (res.ok) return res.json();
+  let detail = "";
+  try { const j = await res.json(); if (typeof j.detail === "string") detail = j.detail; } catch { /* not JSON (proxy page) */ }
+  const s = res.status;
+  if (s === 401) throw new ApiError("key", "Wrong or missing demo key. Check it and try again.", s);
+  if (s === 429) throw new ApiError("rate", `Too many uploads. Wait ${res.headers.get("Retry-After") || 60} seconds and try again.`, s);
+  if (s === 413) throw new ApiError("size", "That file is too large. The limit is 5 MB.", s);
+  if (s === 415) throw new ApiError("type", "Unsupported file. Use a PDF, PNG or JPG.", s);
+  if (s === 503 && /DEMO_API_KEY/.test(detail)) throw new ApiError("config", "The server has no demo key configured.", s);
+  if ((s === 502 || s === 503 || s === 504) && !detail) throw new ApiError("wake", "Service is waking up. This can take about a minute.", s);
+  throw new ApiError("other", detail || `Request failed (${s}).`, s);
+}
+function handleError(e, quiet) {
+  if (e.kind === "key") { markKey(true); $("key").focus(); }
+  if (!quiet || e.kind === "key") toast(e.message, e.kind === "wake" ? "warn" : "bad");
+}
+
+/* ---------- theme + key ---------- */
+const SUN = () => sv("svg", { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": 2, "stroke-linecap": "round" }, sv("circle", { cx: 12, cy: 12, r: 4 }), sv("path", { d: "M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5" }));
+const MOON = () => sv("svg", { width: 18, height: 18, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": 2, "stroke-linecap": "round", "stroke-linejoin": "round" }, sv("path", { d: "M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z" }));
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("theme").replaceChildren(t === "dark" ? SUN() : MOON());
+  $("theme").setAttribute("aria-label", t === "dark" ? "Switch to light theme" : "Switch to dark theme");
+}
+function markKey(invalid) {
+  const k = $("key");
+  k.classList.toggle("need", !k.value);
+  if (invalid) k.setAttribute("aria-invalid", "true"); else k.removeAttribute("aria-invalid");
+}
+
+/* ---------- stats ---------- */
+function statSkeleton() {
+  $("stats").replaceChildren(...[0, 1, 2, 3].map(() => h("div", { class: "card stat" }, h("div", { class: "skel", style: "height:30px;width:60%" }), h("div", { class: "skel", style: "height:14px;width:80%;margin-top:10px" }))));
+}
+async function loadStats(first) {
+  if (first) statSkeleton();
+  try {
+    const s = await api("/stats");
+    const cards = [
+      [s.processed, "Invoices processed"],
+      [s.auto_approved_pct == null ? "–" : `${s.auto_approved_pct}%`, "Auto-approved"],
+      [s.flagged, "Flagged for review"],
+      [s.avg_processing_s == null ? "–" : `${s.avg_processing_s}s`, "Avg processing time"],
+    ];
+    $("stats").replaceChildren(...cards.map(([v, l]) => h("div", { class: "card stat" }, h("div", { class: "v", text: String(v) }), h("div", { class: "l", text: l }))));
+  } catch (e) {
+    $("stats").replaceChildren(h("div", { class: "card empty", style: "grid-column:1/-1" },
+      h("b", { text: e.kind === "key" ? "Enter the demo key to see live numbers" : e.kind === "wake" ? "Service is waking up, about a minute" : "Stats unavailable" }),
+      e.kind === "wake" ? "Retrying automatically." : e.message));
+    if (e.kind === "wake") setTimeout(() => loadStats(false), 8000);
+  }
+}
+
+/* ---------- stepper ---------- */
+function renderStepper(stages, extra) {
+  const byKey = Object.fromEntries((stages || []).map((s) => [s.key, s]));
+  $("stepper").replaceChildren(...STAGES.map(([key, label], i) => {
+    const s = byKey[key] || { status: "pending" };
+    const ms = key === "upload" && extra && extra.uploadMs != null ? extra.uploadMs : s.ms;
+    const sub = s.status === "active" ? "Running…" : s.status === "skipped" ? "Skipped" : s.status === "failed" ? "Failed" : fmtMs(ms);
+    const glyph = s.status === "done" ? "✓" : s.status === "failed" ? "✕" : String(i + 1);
+    return h("li", { class: `step ${s.status}`, "aria-current": s.status === "active" ? "step" : null },
+      h("div", { class: "node", "aria-hidden": "true", text: glyph }),
+      h("div", {}, h("div", { class: "lab", text: label }), h("div", { class: "sub", text: sub }),
+        h("span", { class: "sr", text: s.status })));
+  }));
+}
+
+/* ---------- result ---------- */
+function ring(conf, kind) {
+  const r = 40, c = 2 * Math.PI * r, pct = Math.round((conf || 0) * 100);
+  const col = kind === "ok" ? "var(--ok)" : kind === "warn" ? "var(--warn)" : "var(--bad)";
+  return h("div", { class: "ring", role: "img", "aria-label": `Overall confidence ${pct} percent` },
+    sv("svg", { width: 92, height: 92, viewBox: "0 0 92 92" },
+      sv("circle", { class: "trk", cx: 46, cy: 46, r, fill: "none", "stroke-width": 8 }),
+      sv("circle", { class: "arc", cx: 46, cy: 46, r, fill: "none", "stroke-width": 8, "stroke-linecap": "round", stroke: col, "stroke-dasharray": c, "stroke-dashoffset": c * (1 - (conf || 0)) })),
+    h("div", { class: "num" }, h("span", {}, `${pct}%`, h("small", { text: "confidence" }))));
+}
+function classify(reason) {
+  const r = reason.toLowerCase();
+  if (r.includes("duplicate")) return ["Duplicate", "bad"];
+  if (r.includes("gstin")) return ["Invalid GSTIN", "warn"];
+  if (/anomal|unusual/.test(r)) return ["Unusual amount", "warn"];
+  if (/total|line item|tax|gst rate/.test(r)) return ["Total mismatch", "warn"];
+  if (r.includes("vendor")) return ["Vendor issue", "warn"];
+  if (r.includes("confidence")) return ["Low confidence", "warn"];
+  if (r.includes("not an invoice")) return ["Not an invoice", "bad"];
+  return ["Flagged", "warn"];
+}
+function chips(reasons) {
+  if (!reasons || !reasons.length) return null;
+  return h("div", { class: "chips" }, reasons.map((r) => {
+    const [label, kind] = classify(r);
+    return h("div", { class: `chip ${kind}` }, h("b", { text: label }), h("span", { text: r }));
+  }));
+}
+function fieldConf(job, key, group, value) {
+  if (value == null || value === "") return null;
+  let c = job.fields.confidence;
+  const res = (job.checks && job.checks.results) || {};
+  if (group === "totals" && res.validate_totals && res.validate_totals.ok === false) c = Math.min(c, 0.45);
+  const g = group && group.startsWith("gstin") ? res["validate_" + group] : null;
+  if (g && g.ok === false) c = Math.min(c, 0.4);
+  return c;
+}
+function fieldsCard(job) {
+  const f = job.fields;
+  const card = h("div", { class: "card" }, h("div", { class: "ctitle" }, h("h3", { text: "Extracted fields" }), h("span", { text: "Confidence is estimated from the model score and validator results" })));
+  if (!f || !f.is_invoice) {
+    card.append(h("div", { class: "empty" }, h("b", { text: "No invoice fields" }), f && f.reason ? f.reason : "The document was not recognised as an invoice."));
+    return card;
+  }
+  const tbody = h("tbody");
+  for (const [key, label, kind, group] of FIELDS) {
+    const raw = f[key];
+    const shown = kind === "money" ? money(raw, f.currency) : raw;
+    const c = fieldConf(job, key, group, raw);
+    const low = c != null && c < LOW;
+    tbody.append(h("tr", { class: low ? "low" : "" },
+      h("th", { scope: "row", text: label }),
+      h("td", { class: `val ${kind === "mono" ? "mono" : ""}`, text: shown == null || shown === "" ? "Not found" : String(shown) }),
+      h("td", { class: "cf" },
+        h("div", { class: `bar ${low ? "low" : ""}`, role: "img", "aria-label": c == null ? "No confidence" : `Confidence ${Math.round(c * 100)} percent${low ? ", low" : ""}` }, h("i", { style: `width:${c == null ? 0 : Math.round(c * 100)}%` })),
+        h("div", { class: "cfl", text: c == null ? "–" : `${Math.round(c * 100)}%${low ? " · low" : ""}` }))));
+  }
+  card.append(h("table", { class: "ftable" }, tbody));
+  if (f.line_items && f.line_items.length) {
+    card.append(h("table", { class: "items" },
+      h("thead", {}, h("tr", {}, ["Item", "Qty", "Rate", "Amount"].map((t) => h("th", { scope: "col", text: t })))),
+      h("tbody", {}, f.line_items.map((li) => h("tr", {},
+        h("td", { text: li.description }), h("td", { text: li.quantity ?? "–" }),
+        h("td", { text: li.unit_price ?? "–" }), h("td", { text: li.amount ?? "–" }))))));
+  }
+  return card;
+}
+function previewCard(file) {
+  const card = h("div", { class: "card preview" }, h("div", { class: "ctitle" }, h("h3", { text: "Uploaded file" }), h("span", { text: file ? file.name : "" })));
+  if (file && file.url) {
+    card.append(file.type === "application/pdf" ? h("iframe", { src: file.url, title: `Preview of ${file.name}` }) : h("img", { src: file.url, alt: `Preview of ${file.name}` }));
+  } else card.append(h("div", { class: "none", text: "Preview not available" }));
+  return card;
+}
+function decisionView(job) {
+  const reasons = job.decision_reasons || [];
+  if (job.status === "failed") return { kind: "bad", title: "Processing failed", sub: job.error || "Something went wrong while processing this file.", reasons: [] };
+  if (job.decision === "approve") return { kind: "ok", title: job.sap_doc_number ? `Approved and posted to SAP (doc no. ${job.sap_doc_number})` : "Approved", sub: "All checks passed. No human needed.", reasons: [] };
+  if (job.decision === "manual_review") return { kind: "warn", title: "Needs review", sub: "A person should look at this before it is posted. It is in the review queue below.", reasons };
+  return { kind: "bad", title: "Rejected", sub: "This invoice will not be posted.", reasons };
+}
+function renderResultSkeleton(file) {
+  $("result").replaceChildren(
+    h("div", { class: "skel", style: "height:116px;border-radius:18px;margin-top:16px", "aria-hidden": "true" }),
+    h("div", { class: "split" }, previewCard(file), h("div", { class: "card" }, [0, 1, 2, 3, 4, 5].map(() => h("div", { class: "skel", style: "height:22px;margin:14px 0", "aria-hidden": "true" })))));
+}
+async function renderResult(job, file) {
+  const d = decisionView(job);
+  const conf = job.fields ? job.fields.confidence : 0;
+  const banner = h("div", { class: `banner ${d.kind}`, role: "group", "aria-label": "Decision" },
+    job.status === "failed" ? null : ring(conf, d.kind),
+    h("div", { class: "txt" }, h("h3", { text: d.title }), h("p", { text: d.sub }), chips(d.reasons)));
+  const audit = h("details", { class: "card audit" }, h("summary", { text: "Audit timeline" }), h("p", { class: "pnote", text: "Loading…" }));
+  $("result").replaceChildren(banner, h("div", { class: "split" }, previewCard(file), fieldsCard(job)), audit);
+  let trail;
+  try {
+    trail = (await api(`/reviews/${job.job_id}`)).audit_trail;
+  } catch {
+    trail = job.decision ? [{ decision: job.decision, reasons: job.decision_reasons || [], confidence: conf, created_at: null }] : [];
+  }
+  const items = trail.map((a) => h("li", {},
+    h("div", {}, h("b", { text: a.decision.replace("_", " ") }), a.confidence != null ? ` · confidence ${Math.round(a.confidence * 100)}%` : ""),
+    a.created_at ? h("div", { class: "when", text: new Date(a.created_at).toLocaleString() }) : null,
+    a.reasons && a.reasons.length ? h("ul", { class: "why" }, a.reasons.map((r) => h("li", { text: r, style: "list-style:disc" }))) : null));
+  audit.replaceChildren(h("summary", { text: "Audit timeline" }), items.length ? h("ol", { class: "tl" }, items) : h("p", { class: "pnote", text: "No audit entries." }));
+}
+
+/* ---------- run a file through the pipeline ---------- */
+let runToken = 0, currentUrl = null;
+function setBusy(b) {
+  $("drop").classList.toggle("busy", b);
+  document.querySelectorAll(".sample").forEach((s) => { s.disabled = b; });
+}
+function validateFile(f) {
+  if (f.size > MAX_BYTES) { toast("That file is too large. The limit is 5 MB.", "bad"); return false; }
+  if (!["application/pdf", "image/png", "image/jpeg"].includes(f.type)) { toast("Unsupported file. Use a PDF, PNG or JPG.", "bad"); return false; }
+  return true;
+}
+async function runFile(f) {
+  if (!validateFile(f)) return;
+  const token = ++runToken;
+  if (currentUrl) URL.revokeObjectURL(currentUrl);
+  currentUrl = URL.createObjectURL(f);
+  const file = { name: f.name, type: f.type, url: currentUrl };
+  const extra = {};
+  setBusy(true);
+  renderStepper([{ key: "upload", status: "active" }], extra);
+  renderResultSkeleton(file);
+  $("pnote").textContent = "Uploading…";
+  $("pipe-sec").scrollIntoView({ behavior: reduceMotion() ? "auto" : "smooth", block: "start" });
+  const wakeTimer = setTimeout(() => { if (token === runToken) $("pnote").textContent = "Service is waking up, about a minute. Hang tight."; }, 6000);
+  try {
+    const fd = new FormData();
+    fd.append("file", f, f.name);
+    const t0 = performance.now();
+    const up = await api("/invoices/upload", { method: "POST", body: fd });
+    extra.uploadMs = performance.now() - t0;
+    clearTimeout(wakeTimer);
+    if (up.cached) toast("Same file seen before. Showing the cached result.");
+    $("pnote").textContent = "Processing…";
+    let job, errs = 0;
+    for (let i = 0; i < 150; i++) {
+      if (token !== runToken) return;
+      try {
+        job = await api(`/jobs/${up.job_id}`);
+        errs = 0;
+      } catch (e) {
+        if (e.kind !== "wake" || ++errs > 40) throw e;
+        $("pnote").textContent = "Service is waking up, about a minute. Still trying…";
+        await sleep(3000);
+        continue;
+      }
+      renderStepper(job.stages, extra);
+      if (job.status === "done" || job.status === "failed") break;
+      $("pnote").textContent = "Processing…";
+      await sleep(1100);
+    }
+    if (!job || (job.status !== "done" && job.status !== "failed")) throw new ApiError("other", "Timed out waiting for the result.", 0);
+    $("pnote").textContent = job.status === "done" ? "Finished." : "Failed.";
+    await renderResult(job, file);
+    if (job.status === "failed") toast("Processing failed. See the banner for details.", "bad");
+    loadStats(false); loadReviews();
+  } catch (e) {
+    clearTimeout(wakeTimer);
+    $("pnote").textContent = e.message;
+    $("result").replaceChildren();
+    renderStepper([{ key: "upload", status: "failed" }], extra);
+    handleError(e);
+  } finally {
+    if (token === runToken) setBusy(false);
+  }
+}
+
+/* ---------- samples ---------- */
+async function loadSamples() {
+  let names = Object.keys(SAMPLES);
+  try { names = await (await fetch("/samples")).json(); } catch { /* fall back to the built-in list */ }
+  $("samples").replaceChildren(...names.map((n) => {
+    const m = SAMPLES[n] || { title: n, cap: "Demo invoice.", tag: ["warn", "Sample"] };
+    return h("button", { class: "card sample", type: "button", onclick: async () => {
+      try {
+        const res = await fetch(`/samples/${encodeURIComponent(n)}`);
+        if (!res.ok) throw new Error("missing");
+        runFile(new File([await res.blob()], n, { type: "application/pdf" }));
+      } catch { toast("Could not load that sample. The service may be waking up; try again shortly.", "warn"); }
+    } }, h("span", { class: `tag ${m.tag[0]}`, text: m.tag[1] }), h("span", { class: "t", text: m.title }), h("span", { class: "c", text: m.cap }), h("span", { class: "f mono", text: n }));
+  }));
+}
+
+/* ---------- review queue ---------- */
+let reviewsBusy = false;
+async function loadReviews() {
+  if (reviewsBusy) return;
+  reviewsBusy = true;
+  const rq = $("rq");
+  if (!rq.children.length) rq.replaceChildren(...[0, 1].map(() => h("div", { class: "card" }, h("div", { class: "skel", style: "height:20px;width:60%" }), h("div", { class: "skel", style: "height:14px;margin-top:12px" }), h("div", { class: "skel", style: "height:36px;margin-top:16px" }))));
+  try {
+    const list = await api("/reviews?status=pending");
+    const details = await Promise.all(list.map((r) => api(`/reviews/${r.id}`).then((d) => ({ r, d }))));
+    if (!details.length) rq.replaceChildren(h("div", { class: "card empty", style: "grid-column:1/-1" }, h("b", { text: "Nothing waiting" }), "Flagged invoices will show up here for approval, rejection or correction."));
+    else rq.replaceChildren(...details.map(({ r, d }) => reviewCard(r, d)));
+  } catch (e) {
+    rq.replaceChildren(h("div", { class: "card empty", style: "grid-column:1/-1" }, h("b", { text: e.kind === "key" ? "Enter the demo key to load the queue" : e.kind === "wake" ? "Service is waking up, about a minute" : "Queue unavailable" }), e.kind === "wake" ? "Retrying automatically." : e.message));
+    if (e.kind === "wake") setTimeout(loadReviews, 8000);
+  } finally { reviewsBusy = false; }
+}
+function reviewCard(r, d) {
+  const f = d.corrected_fields || d.fields || {};
+  const card = h("div", { class: "card rcard" });
+  const body = h("div", { style: "display:flex;flex-direction:column;gap:10px" });
+  const view = () => {
+    body.replaceChildren(
+      h("h3", { text: f.vendor_name || r.filename }),
+      h("div", { class: "rmeta" }, h("span", { class: "mono", text: f.invoice_number || "–" }), h("span", { text: money(f.grand_total, f.currency) || "–" }), h("span", { text: `${Math.round((r.confidence || 0) * 100)}% confidence` })),
+      chips(d.reasons),
+      d.corrections && d.corrections.length ? h("div", { class: "rmeta", text: `${d.corrections.length} field(s) corrected` }) : null,
+      h("div", { class: "acts" },
+        h("button", { class: "btn primary sm", type: "button", onclick: (ev) => act(ev.currentTarget, () => api(`/reviews/${r.id}/approve`, { method: "POST" }), "Approved and posted to SAP") }, "Approve"),
+        h("button", { class: "btn sm", type: "button", onclick: edit }, "Edit"),
+        h("button", { class: "btn danger sm", type: "button", onclick: (ev) => act(ev.currentTarget, () => api(`/reviews/${r.id}/reject`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason: "" }) }), "Rejected") }, "Reject")));
+  };
+  const act = async (btn, fn, okMsg) => {
+    card.querySelectorAll("button").forEach((b) => { b.disabled = true; });
+    try { const res = await fn(); toast(res.sap_doc_number ? `${okMsg} (doc no. ${res.sap_doc_number})` : okMsg, "ok"); loadReviews(); loadStats(false); }
+    catch (e) { handleError(e); card.querySelectorAll("button").forEach((b) => { b.disabled = false; }); }
+  };
+  const edit = () => {
+    const inputs = {};
+    const res = h("div", { class: "valres", hidden: true, role: "status" });
+    const grid = h("div", { class: "edit" }, EDITABLE.map(([k, label, type, wide]) => {
+      const input = h("input", { type: type === "number" ? "number" : "text", step: type === "number" ? "0.01" : null, value: f[k] ?? "", id: `e-${r.id}-${k}` });
+      inputs[k] = input;
+      return h("label", { class: wide ? "wide" : "", for: input.id }, label, input);
+    }));
+    const save = async (ev) => {
+      const changes = {};
+      for (const [k, , type] of EDITABLE) {
+        const raw = inputs[k].value.trim();
+        const val = raw === "" ? null : type === "number" ? Number(raw) : raw;
+        if (val !== (f[k] ?? null)) changes[k] = val;
+      }
+      if (!Object.keys(changes).length) { toast("Nothing changed."); return; }
+      ev.currentTarget.disabled = true;
+      try {
+        const out = await api(`/reviews/${r.id}/correct`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ fields: changes }) });
+        Object.assign(f, changes);
+        const v = out.validation;
+        res.hidden = false;
+        res.textContent = `Re-validated: ${v.decision.replace("_", " ")}${v.reasons.length ? ". " + v.reasons.join(" · ") : ". All checks pass."}`;
+        toast("Corrections saved. You can approve now.", "ok");
+      } catch (e) { handleError(e); }
+      ev.currentTarget.disabled = false;
+    };
+    body.replaceChildren(h("h3", { text: "Edit and resubmit" }), grid, res,
+      h("div", { class: "acts" },
+        h("button", { class: "btn primary sm", type: "button", onclick: save }, "Save and re-validate"),
+        h("button", { class: "btn sm", type: "button", onclick: (ev) => act(ev.currentTarget, () => api(`/reviews/${r.id}/approve`, { method: "POST" }), "Approved and posted to SAP") }, "Approve and post"),
+        h("button", { class: "btn sm", type: "button", onclick: view }, "Cancel")));
+    grid.querySelector("input").focus();
+  };
+  view();
+  card.append(body);
+  return card;
+}
+
+/* ---------- wiring ---------- */
+function init() {
+  applyTheme(store.get(localStorage, "ig_theme") === "light" ? "light" : "dark");
+  $("theme").addEventListener("click", () => {
+    const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    applyTheme(t); store.set(localStorage, "ig_theme", t);
+  });
+  const key = $("key");
+  key.value = getKey();
+  markKey(false);
+  let debounce;
+  key.addEventListener("input", () => {
+    store.set(sessionStorage, "ig_key", key.value.trim());
+    markKey(false);
+    clearTimeout(debounce);
+    debounce = setTimeout(() => { loadStats(true); loadReviews(); }, 500);
+  });
+  const drop = $("drop"), input = $("file");
+  const pick = () => input.click();
+  drop.addEventListener("click", pick);
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  input.addEventListener("click", (e) => e.stopPropagation());
+  input.addEventListener("change", () => { if (input.files[0]) runFile(input.files[0]); input.value = ""; });
+  ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("drag"); }));
+  ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("drag"); }));
+  drop.addEventListener("drop", (e) => { const f = e.dataTransfer.files[0]; if (f) runFile(f); });
+  window.addEventListener("dragover", (e) => e.preventDefault());
+  window.addEventListener("drop", (e) => e.preventDefault());
+
+  renderStepper([], {});
+  $("pnote").textContent = "Upload an invoice or try a sample to watch the pipeline run.";
+  loadStats(true); loadSamples(); loadReviews();
+}
+init();
+</script>
+</body>
+</html>

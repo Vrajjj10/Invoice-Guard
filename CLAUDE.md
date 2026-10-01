@@ -95,7 +95,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 - Set GitHub secret `RENDER_DEPLOY_HOOK_URL` (Render deploy hook) so CI redeploys on push to main; `autoDeploy` is false, so the live app only updates on hook/manual deploy.
 - README polish: live URL, EVAL numbers (33/33 decisions, 0 false approves, synthetic data).
 - CV bullets.
-- Optional: single-page upload UI at `/` (drag-drop, plain decision, review list with approve/reject).
+- UI done: `app/static/index.html` served at `/` (single file, vanilla JS, textContent only); `GET /stats`, `GET /samples[/name]` (public, whitelisted), `stages` + `sap_doc_number` on `GET /jobs/{id}`. Per-field confidence bars are *estimated* (overall score + validator results); the API has no per-field scores.
 - Optional: totals check for tax-inclusive line items (see risks).
 
 **Known risks:**
