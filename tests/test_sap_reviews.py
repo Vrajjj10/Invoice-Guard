@@ -259,3 +259,45 @@ def test_reject(client):
     assert client.post(f"/reviews/{jid}/reject").status_code == 409
     assert client.post(f"/reviews/{jid}/approve").status_code == 409
     assert _load(jid).decision == Decision.REJECT
+
+
+class _Resp:
+    def __init__(self, status, body=None, text=""):
+        self.status_code, self._body, self.text = status, body, text
+
+    def json(self):
+        if self._body is None:
+            raise ValueError("no json")
+        return self._body
+
+
+@pytest.mark.parametrize(
+    ("resp", "retryable"),
+    [
+        (_Resp(503), True),
+        (_Resp(422, text="bad"), False),
+        (_Resp(201, body={"x": 1}), True),
+        (_Resp(201), True),
+    ],
+)
+def test_post_supplier_invoice_errors(monkeypatch, resp, retryable):
+    monkeypatch.setattr(sap_client.httpx, "post", lambda *a, **k: resp)
+    with pytest.raises(sap_client.SapError) as ei:
+        sap_client.post_supplier_invoice({})
+    assert ei.value.retryable is retryable
+
+
+def test_post_supplier_invoice_network_error(monkeypatch):
+    def boom(*a, **k):
+        raise sap_client.httpx.ConnectError("down")
+
+    monkeypatch.setattr(sap_client.httpx, "post", boom)
+    with pytest.raises(sap_client.SapError, match="ConnectError"):
+        sap_client.post_supplier_invoice({})
+
+
+def test_post_supplier_invoice_ok(monkeypatch):
+    monkeypatch.setattr(
+        sap_client.httpx, "post", lambda *a, **k: _Resp(201, {"document_number": "51X"})
+    )
+    assert sap_client.post_supplier_invoice({}) == "51X"
