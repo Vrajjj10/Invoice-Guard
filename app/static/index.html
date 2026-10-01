@@ -96,6 +96,10 @@ header.top { display: flex; align-items: center; gap: 14px; padding: 18px 0; fle
 .drop svg { color: var(--accent); }
 .drop strong { font-size: 16px; }
 .drop small { color: var(--muted); }
+.how { max-width: 720px; margin: 14px auto 0; text-align: left; padding: 14px 18px; }
+.how summary { cursor: pointer; font-weight: 600; }
+.how ol { margin: 10px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; }
+.how li { margin: 4px 0; } .how b { color: var(--text); }
 .drop.busy { opacity: .6; pointer-events: none; }
 @keyframes pulse-border { 0%, 100% { box-shadow: 0 0 0 0 var(--accent-soft); } 50% { box-shadow: 0 0 0 10px var(--accent-soft); } }
 
@@ -239,6 +243,16 @@ footer { margin: 64px 0 36px; text-align: center; color: var(--muted); font-size
         <input id="file" type="file" accept="application/pdf,image/png,image/jpeg" hidden>
       </div>
     </div>
+
+    <details class="card how">
+      <summary>How it works</summary>
+      <ol>
+        <li><b>Upload</b> a PDF or image, or click a sample below.</li>
+        <li><b>Watch the pipeline:</b> OCR reads the text, AI extracts the fields, plain code checks totals, GSTIN and duplicates.</li>
+        <li><b>Read the decision:</b> green is posted to SAP, amber waits in the review queue, red is rejected.</li>
+        <li><b>Review flagged invoices:</b> approve, reject, or edit the fields and re-validate.</li>
+      </ol>
+    </details>
 
     <section aria-labelledby="h-stats">
       <h2 id="h-stats">Overview</h2>
