@@ -4,6 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 
 from app.api.invoices import router as invoices_router
 from app.api.reviews import router as reviews_router
@@ -32,6 +33,11 @@ app = FastAPI(
 app.include_router(invoices_router)
 app.include_router(reviews_router)
 app.include_router(mock_sap_router)
+
+
+@app.get("/", include_in_schema=False)
+def root() -> RedirectResponse:
+    return RedirectResponse("/docs")
 
 
 @app.get("/health")
