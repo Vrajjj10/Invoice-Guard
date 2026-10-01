@@ -15,9 +15,12 @@ from app.db.session import get_db
 from app.llm.schema import InvoiceFields
 from app.routing import route
 from app.sap.posting import effective_fields, post_job
+from app.security import require_api_key
 from app.validators import duplicate_hash
 
-router = APIRouter(prefix="/reviews", tags=["reviews"])
+router = APIRouter(
+    prefix="/reviews", tags=["reviews"], dependencies=[Depends(require_api_key)]
+)
 
 
 class CorrectBody(BaseModel):

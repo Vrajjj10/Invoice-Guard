@@ -14,10 +14,9 @@ from app.db.models import AuditLog, Job, JobStatus
 from app.db.session import get_db
 from app.extraction.text import UnsupportedFileError, detect_file_type
 from app.pipeline import process_job
+from app.security import limit_uploads, require_api_key
 
 router = APIRouter(tags=["invoices"])
-
-MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 
 
 class UploadResponse(BaseModel):
@@ -51,15 +50,21 @@ class JobResponse(BaseModel):
     decision_reasons: list[str] | None
 
 
-@router.post("/invoices/upload", response_model=UploadResponse, status_code=202)
+@router.post(
+    "/invoices/upload",
+    response_model=UploadResponse,
+    status_code=202,
+    dependencies=[Depends(require_api_key), Depends(limit_uploads)],
+)
 async def upload_invoice(
     file: UploadFile, background: BackgroundTasks, db: Session = Depends(get_db)
 ) -> UploadResponse:
-    data = await file.read()
+    max_bytes = get_settings().max_upload_bytes
+    data = await file.read(max_bytes + 1)  # never buffer more than the limit
     if not data:
         raise HTTPException(400, "Empty file")
-    if len(data) > MAX_UPLOAD_BYTES:
-        raise HTTPException(413, "File too large (max 10 MB)")
+    if len(data) > max_bytes:
+        raise HTTPException(413, f"File too large (max {max_bytes // (1024 * 1024)} MB)")
     try:
         file_type = detect_file_type(data)
     except UnsupportedFileError as exc:

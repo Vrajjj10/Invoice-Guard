@@ -32,7 +32,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | `app/db/` | SQLAlchemy models/session (SQLite) |
 | `scripts/` | Training, synthetic data generation, eval harness |
 | `tests/` | pytest; LLM client is always mocked |
-| `data/samples/` | Single sample invoice (digital + scanned) from `make_sample.py` |
+| `data/samples/` | Demo invoices (clean, wrong total, duplicate, non-invoice; see its README) + `sample_*` from `make_sample.py` |
 | `data/invoices/` | Phase 7 test set: 25 PDFs, 8 scans, `ground_truth.json` (see `data/README.md`) |
 | `models/` | Trained model artifacts (git-ignored) |
 
@@ -84,13 +84,13 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 7 Test data | done | `scripts/generate_invoices.py` (seeded, byte-reproducible): 25 PDFs / 8 vendors / 4 layouts, 8 scanned PNG/JPG, `data/invoices/ground_truth.json` (fields + decision + reason per file); 6 new vendors added to `vendors.json` and `train_anomaly.py`; offline check: 25/25 expected decisions match validators + router |
 | 8 Eval harness | done | `scripts/run_eval.py`: runs `data/invoices/*` through the real `process_job` (SAP post stubbed), throttled + retried Gemini calls, disk cache by file hash + model (`data/eval/cache`, git-ignored), `--limit/--model/--delay/--report-only`; writes `eval_results.json` + `EVAL.md` |
 | 9 CI/Docker | done | 122 tests, 98% coverage (`pytest --cov=app`), mock LLM autouse in `conftest.py` (no key/network); ruff clean; `Dockerfile` (3.11-slim, non-root, `/health` healthcheck, `$PORT`, anomaly model trained at build) + `.dockerignore`; `.github/workflows/ci.yml`: ruff → pytest → docker build + smoke → Render deploy hook (`RENDER_DEPLOY_HOOK_URL`, skipped if unset) on push to main; README badge |
-| 10 | todo | Deploy (Render) |
+| 10 | in progress | Part 1 done: `app/security.py` (`X-API-Key` = `DEMO_API_KEY` on upload + `/reviews*`, per-IP upload rate limit, fails closed with 503 outside `ENVIRONMENT=dev`), 5 MB upload cap, OCR capped at 1280 px / 150 DPI + one OCR at a time (peak ~470 MB), `render.yaml`, 5 demo invoices in `data/samples/`. Part 2: actual Render deploy |
 
 ### Endpoints so far
 
 - `GET /health` → `{"status":"ok",...}`
 - `POST /invoices/upload` (multipart `file`) → `202 {job_id, status, cached, file_hash}`;
-  `400` empty, `413` > 10 MB, `415` not PDF/PNG/JPEG
+  `400` empty, `413` > 5 MB (`MAX_UPLOAD_BYTES`), `401` bad/missing `X-API-Key`, `429` rate limited, `415` not PDF/PNG/JPEG
 - `GET /jobs/{job_id}` → status, `extraction_method` (`text`/`ocr`/`mixed`), `ocr_confidence`,
   `page_count`, `extraction_ms`, `extracted_text`, `error`, `fields` (LLM), `checks`
   (`results` per tool key, `backfilled`, `error`), `agent_notes`, `agent_iterations`,
@@ -169,7 +169,7 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
 ## Decisions
 
 - **Scanned-page threshold:** a PDF page with < 30 chars of embedded text (`MIN_PAGE_CHARS`) is
-  rendered at 200 DPI and OCR'd. Limits: 10 pages, 12 000 chars of text to LLM, 10 MB upload.
+  rendered at 150 DPI and OCR'd. Limits: 10 pages, 12 000 chars of text to LLM, 5 MB upload. (Phase 10: render DPI lowered 200 -> 150 and OCR max side 1280 px to fit 512 MB RAM.)
 - **Row regrouping:** both PyMuPDF words and RapidOCR boxes are regrouped into visual rows by
   vertical centre, then sorted left→right. A horizontal gap > 15 pt becomes a double space
   (column separator). This keeps table rows like `Steel Bolts M8  7318  500  4.50  2,250.00`
@@ -225,8 +225,8 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
 - **`clean_text` must not collapse double spaces**; they're column separators. It collapses 3+.
 - **RapidOCR drops spaces between words** on the default model ("ShreeGaneshTraders");
   numbers, GSTINs and invoice numbers survive. Leave it to the LLM; don't "fix" with regex.
-- **RapidOCR is slow on CPU:** ~4–7 s per scanned page at 200 DPI. First option if too slow:
-  lower `RENDER_DPI` to 150.
+- **RapidOCR is slow on CPU:** ~3–6 s per scanned page at 150 DPI. First option if too slow:
+  lower `OCR_MAX_SIDE_LEN`.
 - **RapidOCR wants BGR `ndarray`s** (OpenCV convention); PyMuPDF pixmaps are RGB(A), so
   `_pixmap_to_array` drops alpha and flips channels. Image uploads are passed as raw bytes.
 - **`numpy<2.0` pin** is required by rapidocr-onnxruntime/onnxruntime.

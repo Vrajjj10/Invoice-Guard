@@ -5,10 +5,13 @@ import threading
 
 import numpy as np
 
+from app.config import get_settings
+
 log = logging.getLogger(__name__)
 
 _engine = None
 _lock = threading.Lock()
+_ocr_lock = threading.Lock()  # one OCR at a time: concurrent runs would stack their memory
 
 
 def load_engine():
@@ -20,6 +23,9 @@ def load_engine():
 
             log.info("Loading RapidOCR engine...")
             _engine = RapidOCR()
+            # Cap the longest image side: ONNX memory scales with it (2000px -> ~700 MB peak,
+            # 1280px -> ~320 MB), and Render's free tier has 512 MB.
+            _engine.max_side_len = get_settings().ocr_max_side_len
     return _engine
 
 
@@ -29,7 +35,9 @@ def run_ocr(image: np.ndarray | bytes) -> tuple[str, float, int]:
     Lines are regrouped into visual rows (by vertical position) so table rows like
     "Widget  2  500.00  1000.00" stay on one line instead of being split up.
     """
-    result, _ = load_engine()(image)
+    engine = load_engine()
+    with _ocr_lock:
+        result, _ = engine(image)
     if not result:
         return "", 0.0, 0
 

@@ -14,6 +14,13 @@ class Settings(BaseSettings):
     # Secrets: never hardcoded, always from .env
     gemini_api_key: str = ""
     slack_webhook_url: str = ""
+    demo_api_key: str = ""  # required in X-API-Key on upload/review routes (unless environment=dev)
+
+    # Public-demo limits
+    max_upload_bytes: int = 5 * 1024 * 1024
+    upload_rate_limit: int = 10  # uploads per window per IP
+    upload_rate_window: float = 60.0
+    ocr_max_side_len: int = 1280  # RapidOCR downscales larger images (memory vs accuracy)
 
     # LLM models: cheap default, stronger model only for escalation
     default_model: str = "gemini-3.5-flash-lite"

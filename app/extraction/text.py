@@ -10,7 +10,7 @@ import numpy as np
 from app.extraction.ocr import run_ocr
 
 MIN_PAGE_CHARS = 30  # below this, a PDF page is treated as scanned and OCR'd
-RENDER_DPI = 200
+RENDER_DPI = 150
 MAX_TEXT_CHARS = 12_000  # keep LLM input small
 MAX_PAGES = 10
 

@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: invoiceguard
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: false  # CI triggers the deploy hook after tests pass
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: DEMO_API_KEY
+        sync: false
+      - key: SAP_BASE_URL
+        value: http://localhost:10000/mock-sap  # Render's default PORT
