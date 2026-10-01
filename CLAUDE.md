@@ -84,7 +84,26 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 7 Test data | done | `scripts/generate_invoices.py` (seeded, byte-reproducible): 25 PDFs / 8 vendors / 4 layouts, 8 scanned PNG/JPG, `data/invoices/ground_truth.json` (fields + decision + reason per file); 6 new vendors added to `vendors.json` and `train_anomaly.py`; offline check: 25/25 expected decisions match validators + router |
 | 8 Eval harness | done | `scripts/run_eval.py`: runs `data/invoices/*` through the real `process_job` (SAP post stubbed), throttled + retried Gemini calls, disk cache by file hash + model (`data/eval/cache`, git-ignored), `--limit/--model/--delay/--scanned-only/--report-only` (cache key adds OCR max side + DPI for OCR'd files); writes `eval_results.json` + `EVAL.md` |
 | 9 CI/Docker | done | 122 tests, 98% coverage (`pytest --cov=app`), mock LLM autouse in `conftest.py` (no key/network); ruff clean; `Dockerfile` (3.11-slim, non-root, `/health` healthcheck, `$PORT`, anomaly model trained at build) + `.dockerignore`; `.github/workflows/ci.yml`: ruff → pytest → docker build + smoke → Render deploy hook (`RENDER_DEPLOY_HOOK_URL`, skipped if unset) on push to main; README badge |
-| 10 | in progress | Part 1 done: `app/security.py` (`X-API-Key` = `DEMO_API_KEY` on upload, `/jobs/{id}`, `/mock-sap/*`, `/reviews*` (SAP client sends it to localhost), per-IP upload rate limit, fails closed with 503 outside `ENVIRONMENT=dev`), 5 MB upload cap, OCR capped at 1280 px / 150 DPI + one OCR at a time (peak ~470 MB), `render.yaml`, 5 demo invoices in `data/samples/`. Part 2: actual Render deploy |
+| 10 Deploy | mostly done | Part 1: `app/security.py` (`X-API-Key` = `DEMO_API_KEY` on upload, `/jobs/{id}`, `/mock-sap/*`, `/reviews*`; per-IP upload rate limit; fails closed with 503 outside `ENVIRONMENT=dev`), 5 MB upload cap, OCR capped at 1280 px / 150 DPI + one OCR at a time (peak ~470 MB), `render.yaml`, 5 demo invoices in `data/samples/`. Part 2: deployed on Render at https://invoice-guard-df71.onrender.com (`/` redirects to `/docs`); `SAP_BASE_URL` unset -> app posts to its own `http://127.0.0.1:$PORT/mock-sap` with the key; `scripts/demo.py` uploads the 5 samples and prints decisions. Live run 2026-10-01: approve x2 (SAP docs posted), manual_review (wrong total), reject x2 (duplicate, non-invoice) |
+
+## Status / next steps (as of 2026-10-01)
+
+**Done:** Phases 1-9; Phase 10 deployed on Render; CI green (ruff -> pytest (139) -> docker build + smoke); live smoke test passed via `scripts/demo.py` (self-call to `/mock-sap` works on a single worker; handlers are sync `def`, so no deadlock).
+
+**Left:**
+- Commit `scripts/demo.py` + README mention if not yet pushed (check `git status`).
+- Set GitHub secret `RENDER_DEPLOY_HOOK_URL` (Render deploy hook) so CI redeploys on push to main; `autoDeploy` is false, so the live app only updates on hook/manual deploy.
+- README polish: live URL, EVAL numbers (33/33 decisions, 0 false approves, synthetic data).
+- CV bullets.
+- Optional: single-page upload UI at `/` (drag-drop, plain decision, review list with approve/reject).
+- Optional: totals check for tax-inclusive line items (see risks).
+
+**Known risks:**
+- Scanned files on Render free (512 MB): OCR peaked ~470 MB locally; not yet tested live with a scanned file. Watch for OOM restarts.
+- Free instance cold start ~30 s; SQLite + uploads on ephemeral disk are lost on redeploy/restart.
+- `validate_totals` assumes line items are pre-tax and a single GST rate: tax-inclusive or mixed-rate invoices (e.g. `invoice-format-A6.png`) go to manual_review as false alarms.
+- `DEMO_API_KEY` was pasted in a chat session; rotate it in Render if that matters.
+- Mock SAP only; anomaly model and eval numbers are synthetic-data upper bounds.
 
 ### Endpoints so far
 
