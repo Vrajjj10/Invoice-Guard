@@ -86,3 +86,14 @@ def test_stats_requires_key(client, monkeypatch):
     monkeypatch.setattr(get_settings(), "demo_api_key", "secret")
     assert client.get("/stats").status_code == 401
     assert client.get("/stats", headers={"X-API-Key": "secret"}).status_code == 200
+
+
+def test_audit_log_lists_all_jobs(client):
+    a, db = _make(status=JobStatus.DONE)
+    b, _ = _make(status=JobStatus.DONE)
+    db.add(AuditLog(job_id=a.id, decision="approve", reasons="[]"))
+    db.add(AuditLog(job_id=b.id, decision="reject", reasons='["Duplicate"]'))
+    db.commit()
+    rows = client.get("/audit?limit=2").json()
+    assert [r["decision"] for r in rows] == ["reject", "approve"]
+    assert rows[0]["filename"] == "f.pdf" and rows[0]["reasons"] == ["Duplicate"]

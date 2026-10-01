@@ -263,6 +263,10 @@ footer { margin: 64px 0 36px; text-align: center; color: var(--muted); font-size
       <h2 id="h-rev">Review queue</h2>
       <div class="rq" id="rq"></div>
     </section>
+    <section aria-labelledby="h-hist">
+      <h2 id="h-hist">Audit log (all invoices)</h2>
+      <div class="card"><ol class="tl" id="hist" style="margin-top:0"></ol></div>
+    </section>
   </main>
 
   <footer>
@@ -580,7 +584,7 @@ async function runFile(f) {
     $("pnote").textContent = job.status === "done" ? "Finished." : "Failed.";
     await renderResult(job, file);
     if (job.status === "failed") toast("Processing failed. See the banner for details.", "bad");
-    loadStats(false); loadReviews();
+    loadStats(false); loadReviews(); loadHistory();
   } catch (e) {
     clearTimeout(wakeTimer);
     $("pnote").textContent = e.message;
@@ -642,7 +646,7 @@ function reviewCard(r, d) {
   };
   const act = async (btn, fn, okMsg) => {
     card.querySelectorAll("button").forEach((b) => { b.disabled = true; });
-    try { const res = await fn(); toast(res.sap_doc_number ? `${okMsg} (doc no. ${res.sap_doc_number})` : okMsg, "ok"); loadReviews(); loadStats(false); }
+    try { const res = await fn(); toast(res.sap_doc_number ? `${okMsg} (doc no. ${res.sap_doc_number})` : okMsg, "ok"); loadReviews(); loadStats(false); loadHistory(); }
     catch (e) { handleError(e); card.querySelectorAll("button").forEach((b) => { b.disabled = false; }); }
   };
   const edit = () => {
@@ -684,6 +688,22 @@ function reviewCard(r, d) {
   return card;
 }
 
+/* ---------- audit history ---------- */
+async function loadHistory() {
+  const box = $("hist");
+  try {
+    const rows = await api("/audit?limit=30");
+    if (!rows.length) { box.replaceChildren(h("li", { class: "when", text: "No decisions yet. Process an invoice to start the log." })); return; }
+    box.replaceChildren(...rows.map((a) => h("li", {},
+      h("div", {}, h("b", { text: a.decision.replace("_", " ") }), " · ", h("span", { class: "mono", text: a.filename }),
+        a.confidence != null ? ` · ${Math.round(a.confidence * 100)}%` : ""),
+      h("div", { class: "when", text: new Date(a.created_at).toLocaleString() }),
+      a.reasons.length ? h("ul", { class: "why" }, a.reasons.map((r) => h("li", { text: r, style: "list-style:disc" }))) : null)));
+  } catch (e) {
+    box.replaceChildren(h("li", { class: "when", text: e.kind === "key" ? "Enter the demo key to load the log." : "Audit log unavailable." }));
+  }
+}
+
 /* ---------- wiring ---------- */
 function init() {
   applyTheme(store.get(localStorage, "ig_theme") === "light" ? "light" : "dark");
@@ -699,7 +719,7 @@ function init() {
     store.set(sessionStorage, "ig_key", key.value.trim());
     markKey(false);
     clearTimeout(debounce);
-    debounce = setTimeout(() => { loadStats(true); loadReviews(); }, 500);
+    debounce = setTimeout(() => { loadStats(true); loadReviews(); loadHistory(); }, 500);
   });
   const drop = $("drop"), input = $("file");
   const pick = () => input.click();
@@ -715,7 +735,7 @@ function init() {
 
   renderStepper([], {});
   $("pnote").textContent = "Upload an invoice or try a sample to watch the pipeline run.";
-  loadStats(true); loadSamples(); loadReviews();
+  loadStats(true); loadSamples(); loadReviews(); loadHistory();
 }
 init();
 </script>
