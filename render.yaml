@@ -12,5 +12,4 @@ services:
         sync: false
       - key: DEMO_API_KEY
         sync: false
-      - key: SAP_BASE_URL
-        value: http://localhost:10000/mock-sap  # Render's default PORT
+      # SAP_BASE_URL left unset: the app posts to its own /mock-sap on 127.0.0.1:$PORT

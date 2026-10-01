@@ -119,3 +119,29 @@ def test_sap_client_sends_key_to_local_mock_only(monkeypatch):
     monkeypatch.setattr(s, "sap_base_url", "https://sap.example.com/api")
     sap_client.post_supplier_invoice({})
     assert seen == [{"X-API-Key": "secret"}, {}]
+
+
+def test_sap_base_url_defaults_to_own_mock_on_port(monkeypatch):
+    from app.sap import client as sap_client
+
+    seen = []
+
+    class R:
+        status_code = 201
+        text = ""
+
+        def json(self):
+            return {"document_number": "51X"}
+
+    monkeypatch.setattr(
+        sap_client.httpx, "post", lambda url, **k: seen.append((url, k["headers"])) or R()
+    )
+    monkeypatch.setattr(get_settings(), "sap_base_url", "")
+    monkeypatch.setenv("PORT", "10000")
+    sap_client.post_supplier_invoice({})
+    monkeypatch.delenv("PORT")
+    sap_client.post_supplier_invoice({})
+    assert seen == [
+        ("http://127.0.0.1:10000/mock-sap/supplier-invoices", {"X-API-Key": "secret"}),
+        ("http://127.0.0.1:8000/mock-sap/supplier-invoices", {"X-API-Key": "secret"}),
+    ]

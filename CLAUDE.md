@@ -105,7 +105,7 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 - `POST /reviews/{id}/approve` → posts to SAP (`502` + stays pending on failure); `/correct` body `{"fields": {...partial}}`
   → stores original vs corrected, re-runs validators (no LLM), returns re-route preview, stays pending; `/reject` body `{"reason"}`.
   `409` unless pending
-- Config: `SAP_BASE_URL`, `SAP_COMPANY_CODE`, `SAP_GL_ACCOUNT`, `SAP_TAX_CODE`, `SAP_MAX_ATTEMPTS` (3), `SAP_RETRY_DELAY` (0.5 s, doubled)
+- Config: `SAP_BASE_URL` (unset → own mock at `http://127.0.0.1:$PORT/mock-sap`, key sent), `SAP_COMPANY_CODE`, `SAP_GL_ACCOUNT`, `SAP_TAX_CODE`, `SAP_MAX_ATTEMPTS` (3), `SAP_RETRY_DELAY` (0.5 s, doubled)
 
 ### Key files (Phase 5)
 

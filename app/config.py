@@ -41,8 +41,8 @@ class Settings(BaseSettings):
     approve_min_confidence: float = 0.85  # below -> manual review
     reject_below_confidence: float = 0.40  # below -> reject
 
-    # Mock SAP endpoint (swap for a real URL later)
-    sap_base_url: str = "http://localhost:8000/mock-sap"
+    # Real SAP URL; empty -> the bundled mock at http://127.0.0.1:$PORT/mock-sap
+    sap_base_url: str = ""
     sap_company_code: str = "1000"
     sap_gl_account: str = "400000"
     sap_tax_code: str = "V1"

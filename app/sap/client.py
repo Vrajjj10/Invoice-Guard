@@ -1,6 +1,7 @@
 """SAP HTTP client; base URL from settings so a real endpoint can be swapped in."""
 
 import logging
+import os
 import time
 from urllib.parse import urlparse
 
@@ -23,10 +24,16 @@ def _is_local(url: str) -> bool:
     return urlparse(url).hostname in {"localhost", "127.0.0.1", "::1"}
 
 
+def sap_base_url() -> str:
+    """Configured URL, else this app's own mock (uvicorn binds $PORT; 8000 locally)."""
+    configured = get_settings().sap_base_url.strip()
+    return configured or f"http://127.0.0.1:{os.environ.get('PORT', '8000')}/mock-sap"
+
+
 def post_supplier_invoice(payload: dict) -> str:
     """One POST attempt; returns the SAP document number."""
     s = get_settings()
-    url = s.sap_base_url.rstrip("/") + "/supplier-invoices"
+    url = sap_base_url().rstrip("/") + "/supplier-invoices"
     # The bundled mock lives in this app and is key-protected; never send our key elsewhere
     headers = {"X-API-Key": s.demo_api_key} if s.demo_api_key and _is_local(url) else {}
     try:
