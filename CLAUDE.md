@@ -82,7 +82,8 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 5 Anomaly + router | done | Per-vendor IsolationForest (log amount) trained by `scripts/train_anomaly.py` on seeded synthetic history (16 vendors); real `flag_anomaly` with cold-start rule (amount > 5x overall median) for vendors with < 20 invoices; router → approve / manual_review / reject with config thresholds; `audit_log` table; console/Slack alert for review + reject |
 | 6 Mock SAP + review queue | done | `/mock-sap/supplier-invoices` (validated, stored in `sap_documents`, fake 10-digit doc no. `51########`); `sap/payload.py` builder; `sap/client.py` (httpx, `SAP_BASE_URL`, retry w/ backoff, no retry on 4xx); `sap/posting.py` `post_job`; approved jobs auto-post in pipeline, SAP failure → `manual_review` with reason; `/reviews` queue (list/detail/approve/correct/reject) |
 | 7 Test data | done | `scripts/generate_invoices.py` (seeded, byte-reproducible): 25 PDFs / 8 vendors / 4 layouts, 8 scanned PNG/JPG, `data/invoices/ground_truth.json` (fields + decision + reason per file); 6 new vendors added to `vendors.json` and `train_anomaly.py`; offline check: 25/25 expected decisions match validators + router |
-| 8–10 | todo | eval → CI/Docker → deploy |
+| 8 Eval harness | done | `scripts/run_eval.py`: runs `data/invoices/*` through the real `process_job` (SAP post stubbed), throttled + retried Gemini calls, disk cache by file hash + model (`data/eval/cache`, git-ignored), `--limit/--model/--delay/--report-only`; writes `eval_results.json` + `EVAL.md` |
+| 9–10 | todo | CI/Docker → deploy |
 
 ### Endpoints so far
 
@@ -152,6 +153,7 @@ uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /d
 python scripts\train_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\generate_invoices.py   # writes data/invoices/ (25 PDFs, scanned/, ground_truth.json)
+python scriptsun_eval.py [--model gemini-3.5-flash] [--limit N]   # eval -> EVAL.md, eval_results.json
 python scripts\show_ocr.py data\samples\sample_scanned.png
 pytest -q                             # tests (~22 s; OCR slow; Gemini is mocked, no key needed)
 ruff check .                          # lint
@@ -211,6 +213,7 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
   Digital and scanned sets must be run on separate fresh DBs (scan = duplicate of its original).
   Test-vendor GSTINs are computed with `gstin_check_char`; `data/vendors.json` and the `train_anomaly.py`
   list must stay in sync with `VENDORS` in the generator (retrain after changing).
+- **Eval (Phase 8):** digital and scanned sets run on separate fresh DBs (`data/eval/eval.db`). On a cache hit the agent LLM is replaced by the deterministic backstop (same verdicts). Free tier allows only 20 requests/day for `gemini-3.5-flash`, so the escalation run is partial (8 files; resumes from cache on later days). Paid cost uses assumed blended prices (`DEFAULT_PRICE` in the script). Default-model result: 33/33 decisions, 0 false approves, 100% field accuracy on synthetic data (upper bound).
 
 ## Gotchas
 
