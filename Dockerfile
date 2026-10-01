@@ -3,7 +3,8 @@ FROM python:3.11-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PORT=8000 \n    ENVIRONMENT=production
+    PORT=8000 \
+    ENVIRONMENT=production
 
 # libgl/glib: runtime libs opencv (pulled in by rapidocr) needs on slim images
 RUN apt-get update \
