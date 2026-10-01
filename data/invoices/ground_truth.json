@@ -1,0 +1,1527 @@
+{
+  "meta": {
+    "seed": 7,
+    "buyer": {
+      "name": "Dimexon Components LLP",
+      "gstin": "27AABFD4821K1ZI"
+    },
+    "digital_files": 25,
+    "scanned_files": 8,
+    "categories": {
+      "clean": 12,
+      "wrong_tax": 2,
+      "non_invoice": 2,
+      "duplicate": 2,
+      "invalid_gstin": 2,
+      "wrong_total": 3,
+      "high_amount": 2
+    },
+    "note": "Process the digital set and the scanned set against separate fresh DBs: a scanned copy has the same duplicate hash as its original."
+  },
+  "vendors": [
+    {
+      "gstin": "27AAPFU0939F1ZV",
+      "name": "Shree Ganesh Traders Pvt Ltd",
+      "state": "27"
+    },
+    {
+      "gstin": "29AAGCB7383J1Z4",
+      "name": "Bharat Industrial Supplies",
+      "state": "29"
+    },
+    {
+      "gstin": "27AAKFK5512M1Z0",
+      "name": "Konkan Fasteners & Tools",
+      "state": "27"
+    },
+    {
+      "gstin": "27AASPS7340Q1ZL",
+      "name": "Sahyadri Packaging Co",
+      "state": "27"
+    },
+    {
+      "gstin": "36AADCD9921P1Z2",
+      "name": "Deccan Hydraulics Pvt Ltd",
+      "state": "36"
+    },
+    {
+      "gstin": "08AARPR3078N1ZQ",
+      "name": "Rajputana Office Mart",
+      "state": "08"
+    },
+    {
+      "gstin": "33AAKFK6644L1ZY",
+      "name": "Kaveri Electricals LLP",
+      "state": "33"
+    },
+    {
+      "gstin": "03AAHCH2257R1Z8",
+      "name": "Himalaya Lubricants Ltd",
+      "state": "03"
+    }
+  ],
+  "files": {
+    "inv_01.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Konkan Fasteners & Tools",
+        "vendor_gstin": "27AAKFK5512M1Z0",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KFT/26-27/1024",
+        "date": "2026-09-03",
+        "subtotal": 7677.0,
+        "cgst": 690.93,
+        "sgst": 690.93,
+        "igst": 0.0,
+        "tax": 1381.86,
+        "total": 9058.86,
+        "line_items": [
+          {
+            "description": "Torque Wrench",
+            "hsn": "8204",
+            "quantity": 5,
+            "unit_price": 375.24,
+            "amount": 1876.2
+          },
+          {
+            "description": "Allen Key Set",
+            "hsn": "8205",
+            "quantity": 200,
+            "unit_price": 7.98,
+            "amount": 1596.0
+          },
+          {
+            "description": "Drill Bit Set HSS",
+            "hsn": "8207",
+            "quantity": 20,
+            "unit_price": 113.29,
+            "amount": 2265.8
+          },
+          {
+            "description": "Anchor Bolt 12mm",
+            "hsn": "7318",
+            "quantity": 100,
+            "unit_price": 19.39,
+            "amount": 1939.0
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_02.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "ledger",
+      "expected": {
+        "vendor": "Himalaya Lubricants Ltd",
+        "vendor_gstin": "03AAHCH2257R1Z8",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "HLL/26-27/556",
+        "date": "2026-08-09",
+        "subtotal": 233901.06,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 65492.3,
+        "tax": 65492.3,
+        "total": 299393.36,
+        "line_items": [
+          {
+            "description": "Hydraulic Oil 68 (210L)",
+            "hsn": "2710",
+            "quantity": 2,
+            "unit_price": 25618.98,
+            "amount": 51237.96
+          },
+          {
+            "description": "Gear Oil 90 (20L)",
+            "hsn": "2710",
+            "quantity": 200,
+            "unit_price": 182.93,
+            "amount": 36586.0
+          },
+          {
+            "description": "Coolant Concentrate 20L",
+            "hsn": "3820",
+            "quantity": 10,
+            "unit_price": 9203.31,
+            "amount": 92033.1
+          },
+          {
+            "description": "Industrial Grease 18kg",
+            "hsn": "2710",
+            "quantity": 100,
+            "unit_price": 540.44,
+            "amount": 54044.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_03.pdf": {
+      "category": "wrong_tax",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Konkan Fasteners & Tools",
+        "vendor_gstin": "27AAKFK5512M1Z0",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KFT/26-27/967",
+        "date": "2026-08-25",
+        "subtotal": 6770.5,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 1218.7,
+        "tax": 1218.7,
+        "total": 7989.2,
+        "line_items": [
+          {
+            "description": "Anchor Bolt 12mm",
+            "hsn": "7318",
+            "quantity": 100,
+            "unit_price": 33.67,
+            "amount": 3367.0
+          },
+          {
+            "description": "Allen Key Set",
+            "hsn": "8205",
+            "quantity": 50,
+            "unit_price": 68.07,
+            "amount": 3403.5
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "tax_invalid",
+      "reason": "Totals/tax failed: intra-state supply charged IGST instead of CGST+SGST",
+      "note": "intra-state supply charged IGST instead of CGST+SGST"
+    },
+    "inv_04.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "ledger",
+      "expected": {
+        "vendor": "Sahyadri Packaging Co",
+        "vendor_gstin": "27AASPS7340Q1ZL",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SPC/26-27/372",
+        "date": "2026-08-06",
+        "subtotal": 46235.0,
+        "cgst": 4161.15,
+        "sgst": 4161.15,
+        "igst": 0.0,
+        "tax": 8322.3,
+        "total": 54557.3,
+        "line_items": [
+          {
+            "description": "Stretch Film 500mm",
+            "hsn": "3920",
+            "quantity": 200,
+            "unit_price": 82.26,
+            "amount": 16452.0
+          },
+          {
+            "description": "BOPP Tape 48mm",
+            "hsn": "3919",
+            "quantity": 5,
+            "unit_price": 3824.5,
+            "amount": 19122.5
+          },
+          {
+            "description": "Corrugated Box 5-ply",
+            "hsn": "4819",
+            "quantity": 50,
+            "unit_price": 213.21,
+            "amount": 10660.5
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_05.pdf": {
+      "category": "non_invoice",
+      "is_invoice": false,
+      "template": "letter",
+      "expected": {
+        "vendor": null,
+        "vendor_gstin": null,
+        "buyer_gstin": null,
+        "invoice_no": null,
+        "date": null,
+        "subtotal": null,
+        "cgst": null,
+        "sgst": null,
+        "igst": null,
+        "tax": null,
+        "total": null,
+        "line_items": []
+      },
+      "tax_type": null,
+      "decision": "reject",
+      "reason_code": "not_invoice",
+      "reason": "Not an invoice: bank-detail change letter",
+      "note": "letter"
+    },
+    "inv_06.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "band",
+      "expected": {
+        "vendor": "Deccan Hydraulics Pvt Ltd",
+        "vendor_gstin": "36AADCD9921P1Z2",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "DHP/26-27/837",
+        "date": "2026-08-17",
+        "subtotal": 104293.85,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 18772.89,
+        "tax": 18772.89,
+        "total": 123066.74,
+        "line_items": [
+          {
+            "description": "Seal Kit",
+            "hsn": "4016",
+            "quantity": 5,
+            "unit_price": 6424.81,
+            "amount": 32124.05
+          },
+          {
+            "description": "Hydraulic Cylinder 63mm",
+            "hsn": "8412",
+            "quantity": 10,
+            "unit_price": 4077.72,
+            "amount": 40777.2
+          },
+          {
+            "description": "Pressure Valve",
+            "hsn": "8481",
+            "quantity": 10,
+            "unit_price": 3139.26,
+            "amount": 31392.6
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_07.pdf": {
+      "category": "duplicate",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Himalaya Lubricants Ltd",
+        "vendor_gstin": "03AAHCH2257R1Z8",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "HLL/26-27/556",
+        "date": "2026-08-09",
+        "subtotal": 233901.06,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 65492.3,
+        "tax": 65492.3,
+        "total": 299393.36,
+        "line_items": [
+          {
+            "description": "Hydraulic Oil 68 (210L)",
+            "hsn": "2710",
+            "quantity": 2,
+            "unit_price": 25618.98,
+            "amount": 51237.96
+          },
+          {
+            "description": "Gear Oil 90 (20L)",
+            "hsn": "2710",
+            "quantity": 200,
+            "unit_price": 182.93,
+            "amount": 36586.0
+          },
+          {
+            "description": "Coolant Concentrate 20L",
+            "hsn": "3820",
+            "quantity": 10,
+            "unit_price": 9203.31,
+            "amount": 92033.1
+          },
+          {
+            "description": "Industrial Grease 18kg",
+            "hsn": "2710",
+            "quantity": 100,
+            "unit_price": 540.44,
+            "amount": 54044.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "reject",
+      "reason_code": "duplicate",
+      "reason": "Duplicate of an earlier invoice (same vendor, number and total)",
+      "note": "re-sent copy of HLL/26-27/556",
+      "duplicate_of": "inv_02.pdf"
+    },
+    "inv_08.pdf": {
+      "category": "wrong_tax",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Shree Ganesh Traders Pvt Ltd",
+        "vendor_gstin": "27AAPFU0939F1ZV",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SGT/26-27/440",
+        "date": "2026-09-12",
+        "subtotal": 16510.0,
+        "cgst": 1155.7,
+        "sgst": 1155.7,
+        "igst": 0.0,
+        "tax": 2311.4,
+        "total": 18821.4,
+        "line_items": [
+          {
+            "description": "Bearing 6204ZZ",
+            "hsn": "8482",
+            "quantity": 100,
+            "unit_price": 52.41,
+            "amount": 5241.0
+          },
+          {
+            "description": "Hydraulic Hose 2m",
+            "hsn": "4009",
+            "quantity": 100,
+            "unit_price": 47.81,
+            "amount": 4781.0
+          },
+          {
+            "description": "Hex Nut M10",
+            "hsn": "7318",
+            "quantity": 100,
+            "unit_price": 41.13,
+            "amount": 4113.0
+          },
+          {
+            "description": "Steel Bolts M8",
+            "hsn": "7318",
+            "quantity": 25,
+            "unit_price": 95.0,
+            "amount": 2375.0
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "manual_review",
+      "reason_code": "tax_invalid",
+      "reason": "Totals/tax failed: CGST+SGST charged at 7%+7% (effective 14%, not a GST slab)",
+      "note": "CGST+SGST charged at 7%+7% (effective 14%, not a GST slab)"
+    },
+    "inv_09.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Shree Ganesh Traders Pvt Ltd",
+        "vendor_gstin": "27AAPFU0939F1ZV",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SGT/26-27/261",
+        "date": "2026-08-29",
+        "subtotal": 16404.62,
+        "cgst": 1476.42,
+        "sgst": 1476.42,
+        "igst": 0.0,
+        "tax": 2952.84,
+        "total": 19357.46,
+        "line_items": [
+          {
+            "description": "Hydraulic Hose 2m",
+            "hsn": "4009",
+            "quantity": 12,
+            "unit_price": 293.43,
+            "amount": 3521.16
+          },
+          {
+            "description": "Steel Bolts M8",
+            "hsn": "7318",
+            "quantity": 2,
+            "unit_price": 1344.73,
+            "amount": 2689.46
+          },
+          {
+            "description": "Bearing 6204ZZ",
+            "hsn": "8482",
+            "quantity": 100,
+            "unit_price": 41.44,
+            "amount": 4144.0
+          },
+          {
+            "description": "Washer Set",
+            "hsn": "7318",
+            "quantity": 10,
+            "unit_price": 183.88,
+            "amount": 1838.8
+          },
+          {
+            "description": "Hex Nut M10",
+            "hsn": "7318",
+            "quantity": 20,
+            "unit_price": 210.56,
+            "amount": 4211.2
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_10.pdf": {
+      "category": "invalid_gstin",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Rajputana Office Mart",
+        "vendor_gstin": "08AAR1R3078N1ZQ",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "ROM/26-27/857",
+        "date": "2026-09-11",
+        "subtotal": 5451.46,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 654.18,
+        "tax": 654.18,
+        "total": 6105.64,
+        "line_items": [
+          {
+            "description": "Ball Pen Box",
+            "hsn": "9608",
+            "quantity": 25,
+            "unit_price": 110.6,
+            "amount": 2765.0
+          },
+          {
+            "description": "File Folder",
+            "hsn": "4820",
+            "quantity": 12,
+            "unit_price": 124.83,
+            "amount": 1497.96
+          },
+          {
+            "description": "A4 Paper Ream",
+            "hsn": "4802",
+            "quantity": 50,
+            "unit_price": 23.77,
+            "amount": 1188.5
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "invalid_gstin",
+      "reason": "Vendor GSTIN failed: vendor GSTIN does not match the 15-character format",
+      "note": "vendor GSTIN does not match the 15-character format"
+    },
+    "inv_11.pdf": {
+      "category": "non_invoice",
+      "is_invoice": false,
+      "template": "memo",
+      "expected": {
+        "vendor": null,
+        "vendor_gstin": null,
+        "buyer_gstin": null,
+        "invoice_no": null,
+        "date": null,
+        "subtotal": null,
+        "cgst": null,
+        "sgst": null,
+        "igst": null,
+        "tax": null,
+        "total": null,
+        "line_items": []
+      },
+      "tax_type": null,
+      "decision": "reject",
+      "reason_code": "not_invoice",
+      "reason": "Not an invoice: internal petty cash memo",
+      "note": "memo"
+    },
+    "inv_12.pdf": {
+      "category": "wrong_total",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Kaveri Electricals LLP",
+        "vendor_gstin": "33AAKFK6644L1ZY",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KEL/26-27/345",
+        "date": "2026-08-08",
+        "subtotal": 20925.7,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 3766.63,
+        "tax": 3766.63,
+        "total": 24629.33,
+        "line_items": [
+          {
+            "description": "LED Panel 40W",
+            "hsn": "9405",
+            "quantity": 50,
+            "unit_price": 197.23,
+            "amount": 9861.5
+          },
+          {
+            "description": "Copper Cable 2.5mm (m)",
+            "hsn": "8544",
+            "quantity": 20,
+            "unit_price": 553.21,
+            "amount": 11064.2
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "totals_mismatch",
+      "reason": "Totals/tax failed: grand total has transposed digits",
+      "note": "grand total has transposed digits"
+    },
+    "inv_13.pdf": {
+      "category": "wrong_total",
+      "is_invoice": true,
+      "template": "ledger",
+      "expected": {
+        "vendor": "Sahyadri Packaging Co",
+        "vendor_gstin": "27AASPS7340Q1ZL",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SPC/26-27/745",
+        "date": "2026-09-20",
+        "subtotal": 39071.2,
+        "cgst": 3516.41,
+        "sgst": 3516.41,
+        "igst": 0.0,
+        "tax": 7032.82,
+        "total": 46104.02,
+        "line_items": [
+          {
+            "description": "BOPP Tape 48mm",
+            "hsn": "3919",
+            "quantity": 10,
+            "unit_price": 1180.64,
+            "amount": 13006.4
+          },
+          {
+            "description": "Bubble Wrap Roll",
+            "hsn": "3921",
+            "quantity": 100,
+            "unit_price": 149.1,
+            "amount": 14910.0
+          },
+          {
+            "description": "Stretch Film 500mm",
+            "hsn": "3920",
+            "quantity": 2,
+            "unit_price": 6177.4,
+            "amount": 12354.8
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "manual_review",
+      "reason_code": "totals_mismatch",
+      "reason": "Totals/tax failed: a line amount does not equal qty x rate; lines do not sum to subtotal",
+      "note": "a line amount does not equal qty x rate; lines do not sum to subtotal"
+    },
+    "inv_14.pdf": {
+      "category": "high_amount",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Rajputana Office Mart",
+        "vendor_gstin": "08AARPR3078N1ZQ",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "ROM/26-27/1008",
+        "date": "2026-08-28",
+        "subtotal": 59999.9,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 7199.99,
+        "tax": 7199.99,
+        "total": 67199.89,
+        "line_items": [
+          {
+            "description": "Stapler Heavy Duty",
+            "hsn": "8472",
+            "quantity": 40,
+            "unit_price": 919.76,
+            "amount": 36790.4
+          },
+          {
+            "description": "A4 Paper Ream",
+            "hsn": "4802",
+            "quantity": 50,
+            "unit_price": 464.19,
+            "amount": 23209.5
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "amount_anomaly",
+      "reason": "Anomalous amount for this vendor: amount about 12x the vendor's typical invoice",
+      "note": "amount about 12x the vendor's typical invoice"
+    },
+    "inv_15.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Kaveri Electricals LLP",
+        "vendor_gstin": "33AAKFK6644L1ZY",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KEL/26-27/670",
+        "date": "2026-08-09",
+        "subtotal": 16829.2,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 3029.26,
+        "tax": 3029.26,
+        "total": 19858.46,
+        "line_items": [
+          {
+            "description": "MCB 32A",
+            "hsn": "8536",
+            "quantity": 40,
+            "unit_price": 171.33,
+            "amount": 6853.2
+          },
+          {
+            "description": "Copper Cable 2.5mm (m)",
+            "hsn": "8544",
+            "quantity": 40,
+            "unit_price": 136.35,
+            "amount": 5454.0
+          },
+          {
+            "description": "Contactor 25A",
+            "hsn": "8536",
+            "quantity": 40,
+            "unit_price": 113.05,
+            "amount": 4522.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_16.pdf": {
+      "category": "wrong_total",
+      "is_invoice": true,
+      "template": "band",
+      "expected": {
+        "vendor": "Bharat Industrial Supplies",
+        "vendor_gstin": "29AAGCB7383J1Z4",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "BIS/26-27/316",
+        "date": "2026-09-02",
+        "subtotal": 56637.0,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 10194.66,
+        "tax": 10194.66,
+        "total": 67331.66,
+        "line_items": [
+          {
+            "description": "Cutting Disc 4in",
+            "hsn": "6805",
+            "quantity": 200,
+            "unit_price": 187.71,
+            "amount": 37542.0
+          },
+          {
+            "description": "Safety Helmet",
+            "hsn": "6506",
+            "quantity": 25,
+            "unit_price": 763.8,
+            "amount": 19095.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "totals_mismatch",
+      "reason": "Totals/tax failed: grand total overstated by 500.00",
+      "note": "grand total overstated by 500.00"
+    },
+    "inv_17.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "band",
+      "expected": {
+        "vendor": "Bharat Industrial Supplies",
+        "vendor_gstin": "29AAGCB7383J1Z4",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "BIS/26-27/296",
+        "date": "2026-08-20",
+        "subtotal": 59040.7,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 10627.33,
+        "tax": 10627.33,
+        "total": 69668.03,
+        "line_items": [
+          {
+            "description": "Welding Rod 3.15mm",
+            "hsn": "8311",
+            "quantity": 50,
+            "unit_price": 309.03,
+            "amount": 15451.5
+          },
+          {
+            "description": "Industrial Gloves (pair)",
+            "hsn": "6116",
+            "quantity": 40,
+            "unit_price": 485.03,
+            "amount": 19401.2
+          },
+          {
+            "description": "Cutting Disc 4in",
+            "hsn": "6805",
+            "quantity": 100,
+            "unit_price": 241.88,
+            "amount": 24188.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_18.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Rajputana Office Mart",
+        "vendor_gstin": "08AARPR3078N1ZQ",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "ROM/26-27/599",
+        "date": "2026-08-12",
+        "subtotal": 3810.58,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 457.27,
+        "tax": 457.27,
+        "total": 4267.85,
+        "line_items": [
+          {
+            "description": "Ball Pen Box",
+            "hsn": "9608",
+            "quantity": 20,
+            "unit_price": 43.59,
+            "amount": 871.8
+          },
+          {
+            "description": "File Folder",
+            "hsn": "4820",
+            "quantity": 2,
+            "unit_price": 1469.39,
+            "amount": 2938.78
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_19.pdf": {
+      "category": "invalid_gstin",
+      "is_invoice": true,
+      "template": "band",
+      "expected": {
+        "vendor": "Deccan Hydraulics Pvt Ltd",
+        "vendor_gstin": "36AADCD9921P1ZA",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "DHP/26-27/683",
+        "date": "2026-08-25",
+        "subtotal": 73584.48,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 13245.21,
+        "tax": 13245.21,
+        "total": 86829.69,
+        "line_items": [
+          {
+            "description": "Seal Kit",
+            "hsn": "4016",
+            "quantity": 12,
+            "unit_price": 3316.04,
+            "amount": 39792.48
+          },
+          {
+            "description": "Gear Pump 20cc",
+            "hsn": "8413",
+            "quantity": 200,
+            "unit_price": 168.96,
+            "amount": 33792.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "invalid_gstin",
+      "reason": "Vendor GSTIN failed: vendor GSTIN check character is wrong",
+      "note": "vendor GSTIN check character is wrong"
+    },
+    "inv_20.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Shree Ganesh Traders Pvt Ltd",
+        "vendor_gstin": "27AAPFU0939F1ZV",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SGT/26-27/195",
+        "date": "2026-08-05",
+        "subtotal": 14343.32,
+        "cgst": 1290.9,
+        "sgst": 1290.9,
+        "igst": 0.0,
+        "tax": 2581.8,
+        "total": 16925.12,
+        "line_items": [
+          {
+            "description": "Bearing 6204ZZ",
+            "hsn": "8482",
+            "quantity": 100,
+            "unit_price": 45.65,
+            "amount": 4565.0
+          },
+          {
+            "description": "Steel Bolts M8",
+            "hsn": "7318",
+            "quantity": 12,
+            "unit_price": 814.86,
+            "amount": 9778.32
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_21.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Konkan Fasteners & Tools",
+        "vendor_gstin": "27AAKFK5512M1Z0",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KFT/26-27/846",
+        "date": "2026-08-24",
+        "subtotal": 7417.7,
+        "cgst": 667.59,
+        "sgst": 667.59,
+        "igst": 0.0,
+        "tax": 1335.18,
+        "total": 8752.88,
+        "line_items": [
+          {
+            "description": "Anchor Bolt 12mm",
+            "hsn": "7318",
+            "quantity": 5,
+            "unit_price": 540.24,
+            "amount": 2701.2
+          },
+          {
+            "description": "Drill Bit Set HSS",
+            "hsn": "8207",
+            "quantity": 100,
+            "unit_price": 9.28,
+            "amount": 928.0
+          },
+          {
+            "description": "Torque Wrench",
+            "hsn": "8204",
+            "quantity": 200,
+            "unit_price": 7.73,
+            "amount": 1546.0
+          },
+          {
+            "description": "Allen Key Set",
+            "hsn": "8205",
+            "quantity": 25,
+            "unit_price": 89.7,
+            "amount": 2242.5
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_22.pdf": {
+      "category": "high_amount",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Konkan Fasteners & Tools",
+        "vendor_gstin": "27AAKFK5512M1Z0",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KFT/26-27/968",
+        "date": "2026-09-22",
+        "subtotal": 80000.05,
+        "cgst": 7200.0,
+        "sgst": 7200.0,
+        "igst": 0.0,
+        "tax": 14400.0,
+        "total": 94400.05,
+        "line_items": [
+          {
+            "description": "Allen Key Set",
+            "hsn": "8205",
+            "quantity": 5,
+            "unit_price": 7228.49,
+            "amount": 36142.45
+          },
+          {
+            "description": "Torque Wrench",
+            "hsn": "8204",
+            "quantity": 40,
+            "unit_price": 1096.44,
+            "amount": 43857.6
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "manual_review",
+      "reason_code": "amount_anomaly",
+      "reason": "Anomalous amount for this vendor: amount about 10x the vendor's typical invoice",
+      "note": "amount about 10x the vendor's typical invoice"
+    },
+    "inv_23.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "ledger",
+      "expected": {
+        "vendor": "Sahyadri Packaging Co",
+        "vendor_gstin": "27AASPS7340Q1ZL",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SPC/26-27/733",
+        "date": "2026-09-13",
+        "subtotal": 40110.57,
+        "cgst": 3609.95,
+        "sgst": 3609.95,
+        "igst": 0.0,
+        "tax": 7219.9,
+        "total": 47330.47,
+        "line_items": [
+          {
+            "description": "Corrugated Box 5-ply",
+            "hsn": "4819",
+            "quantity": 5,
+            "unit_price": 2829.21,
+            "amount": 14146.05
+          },
+          {
+            "description": "BOPP Tape 48mm",
+            "hsn": "3919",
+            "quantity": 2,
+            "unit_price": 6962.66,
+            "amount": 13925.32
+          },
+          {
+            "description": "Bubble Wrap Roll",
+            "hsn": "3921",
+            "quantity": 20,
+            "unit_price": 601.96,
+            "amount": 12039.2
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_24.pdf": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Shree Ganesh Traders Pvt Ltd",
+        "vendor_gstin": "27AAPFU0939F1ZV",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SGT/26-27/817",
+        "date": "2026-09-03",
+        "subtotal": 12034.86,
+        "cgst": 1083.14,
+        "sgst": 1083.14,
+        "igst": 0.0,
+        "tax": 2166.28,
+        "total": 14201.14,
+        "line_items": [
+          {
+            "description": "Steel Bolts M8",
+            "hsn": "7318",
+            "quantity": 2,
+            "unit_price": 1410.17,
+            "amount": 2820.34
+          },
+          {
+            "description": "Washer Set",
+            "hsn": "7318",
+            "quantity": 200,
+            "unit_price": 29.23,
+            "amount": 5846.0
+          },
+          {
+            "description": "Bearing 6204ZZ",
+            "hsn": "8482",
+            "quantity": 12,
+            "unit_price": 280.71,
+            "amount": 3368.52
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": ""
+    },
+    "inv_25.pdf": {
+      "category": "duplicate",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Konkan Fasteners & Tools",
+        "vendor_gstin": "27AAKFK5512M1Z0",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KFT/26-27/1024",
+        "date": "2026-09-03",
+        "subtotal": 7677.0,
+        "cgst": 690.93,
+        "sgst": 690.93,
+        "igst": 0.0,
+        "tax": 1381.86,
+        "total": 9058.86,
+        "line_items": [
+          {
+            "description": "Torque Wrench",
+            "hsn": "8204",
+            "quantity": 5,
+            "unit_price": 375.24,
+            "amount": 1876.2
+          },
+          {
+            "description": "Allen Key Set",
+            "hsn": "8205",
+            "quantity": 200,
+            "unit_price": 7.98,
+            "amount": 1596.0
+          },
+          {
+            "description": "Drill Bit Set HSS",
+            "hsn": "8207",
+            "quantity": 20,
+            "unit_price": 113.29,
+            "amount": 2265.8
+          },
+          {
+            "description": "Anchor Bolt 12mm",
+            "hsn": "7318",
+            "quantity": 100,
+            "unit_price": 19.39,
+            "amount": 1939.0
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "reject",
+      "reason_code": "duplicate",
+      "reason": "Duplicate of an earlier invoice (same vendor, number and total)",
+      "note": "re-sent copy of KFT/26-27/1024",
+      "duplicate_of": "inv_01.pdf"
+    },
+    "scanned/inv_01_scan.png": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Konkan Fasteners & Tools",
+        "vendor_gstin": "27AAKFK5512M1Z0",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KFT/26-27/1024",
+        "date": "2026-09-03",
+        "subtotal": 7677.0,
+        "cgst": 690.93,
+        "sgst": 690.93,
+        "igst": 0.0,
+        "tax": 1381.86,
+        "total": 9058.86,
+        "line_items": [
+          {
+            "description": "Torque Wrench",
+            "hsn": "8204",
+            "quantity": 5,
+            "unit_price": 375.24,
+            "amount": 1876.2
+          },
+          {
+            "description": "Allen Key Set",
+            "hsn": "8205",
+            "quantity": 200,
+            "unit_price": 7.98,
+            "amount": 1596.0
+          },
+          {
+            "description": "Drill Bit Set HSS",
+            "hsn": "8207",
+            "quantity": 20,
+            "unit_price": 113.29,
+            "amount": 2265.8
+          },
+          {
+            "description": "Anchor Bolt 12mm",
+            "hsn": "7318",
+            "quantity": 100,
+            "unit_price": 19.39,
+            "amount": 1939.0
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": "",
+      "scan_of": "inv_01.pdf"
+    },
+    "scanned/inv_02_scan.jpg": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "ledger",
+      "expected": {
+        "vendor": "Himalaya Lubricants Ltd",
+        "vendor_gstin": "03AAHCH2257R1Z8",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "HLL/26-27/556",
+        "date": "2026-08-09",
+        "subtotal": 233901.06,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 65492.3,
+        "tax": 65492.3,
+        "total": 299393.36,
+        "line_items": [
+          {
+            "description": "Hydraulic Oil 68 (210L)",
+            "hsn": "2710",
+            "quantity": 2,
+            "unit_price": 25618.98,
+            "amount": 51237.96
+          },
+          {
+            "description": "Gear Oil 90 (20L)",
+            "hsn": "2710",
+            "quantity": 200,
+            "unit_price": 182.93,
+            "amount": 36586.0
+          },
+          {
+            "description": "Coolant Concentrate 20L",
+            "hsn": "3820",
+            "quantity": 10,
+            "unit_price": 9203.31,
+            "amount": 92033.1
+          },
+          {
+            "description": "Industrial Grease 18kg",
+            "hsn": "2710",
+            "quantity": 100,
+            "unit_price": 540.44,
+            "amount": 54044.0
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": "",
+      "scan_of": "inv_02.pdf"
+    },
+    "scanned/inv_04_scan.png": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "ledger",
+      "expected": {
+        "vendor": "Sahyadri Packaging Co",
+        "vendor_gstin": "27AASPS7340Q1ZL",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "SPC/26-27/372",
+        "date": "2026-08-06",
+        "subtotal": 46235.0,
+        "cgst": 4161.15,
+        "sgst": 4161.15,
+        "igst": 0.0,
+        "tax": 8322.3,
+        "total": 54557.3,
+        "line_items": [
+          {
+            "description": "Stretch Film 500mm",
+            "hsn": "3920",
+            "quantity": 200,
+            "unit_price": 82.26,
+            "amount": 16452.0
+          },
+          {
+            "description": "BOPP Tape 48mm",
+            "hsn": "3919",
+            "quantity": 5,
+            "unit_price": 3824.5,
+            "amount": 19122.5
+          },
+          {
+            "description": "Corrugated Box 5-ply",
+            "hsn": "4819",
+            "quantity": 50,
+            "unit_price": 213.21,
+            "amount": 10660.5
+          }
+        ]
+      },
+      "tax_type": "CGST+SGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": "",
+      "scan_of": "inv_04.pdf"
+    },
+    "scanned/inv_05_scan.jpg": {
+      "category": "non_invoice",
+      "is_invoice": false,
+      "template": "letter",
+      "expected": {
+        "vendor": null,
+        "vendor_gstin": null,
+        "buyer_gstin": null,
+        "invoice_no": null,
+        "date": null,
+        "subtotal": null,
+        "cgst": null,
+        "sgst": null,
+        "igst": null,
+        "tax": null,
+        "total": null,
+        "line_items": []
+      },
+      "tax_type": null,
+      "decision": "reject",
+      "reason_code": "not_invoice",
+      "reason": "Not an invoice: bank-detail change letter",
+      "note": "letter",
+      "scan_of": "inv_05.pdf"
+    },
+    "scanned/inv_06_scan.png": {
+      "category": "clean",
+      "is_invoice": true,
+      "template": "band",
+      "expected": {
+        "vendor": "Deccan Hydraulics Pvt Ltd",
+        "vendor_gstin": "36AADCD9921P1Z2",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "DHP/26-27/837",
+        "date": "2026-08-17",
+        "subtotal": 104293.85,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 18772.89,
+        "tax": 18772.89,
+        "total": 123066.74,
+        "line_items": [
+          {
+            "description": "Seal Kit",
+            "hsn": "4016",
+            "quantity": 5,
+            "unit_price": 6424.81,
+            "amount": 32124.05
+          },
+          {
+            "description": "Hydraulic Cylinder 63mm",
+            "hsn": "8412",
+            "quantity": 10,
+            "unit_price": 4077.72,
+            "amount": 40777.2
+          },
+          {
+            "description": "Pressure Valve",
+            "hsn": "8481",
+            "quantity": 10,
+            "unit_price": 3139.26,
+            "amount": 31392.6
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "approve",
+      "reason_code": "ok",
+      "reason": "All checks passed",
+      "note": "",
+      "scan_of": "inv_06.pdf"
+    },
+    "scanned/inv_10_scan.jpg": {
+      "category": "invalid_gstin",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Rajputana Office Mart",
+        "vendor_gstin": "08AAR1R3078N1ZQ",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "ROM/26-27/857",
+        "date": "2026-09-11",
+        "subtotal": 5451.46,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 654.18,
+        "tax": 654.18,
+        "total": 6105.64,
+        "line_items": [
+          {
+            "description": "Ball Pen Box",
+            "hsn": "9608",
+            "quantity": 25,
+            "unit_price": 110.6,
+            "amount": 2765.0
+          },
+          {
+            "description": "File Folder",
+            "hsn": "4820",
+            "quantity": 12,
+            "unit_price": 124.83,
+            "amount": 1497.96
+          },
+          {
+            "description": "A4 Paper Ream",
+            "hsn": "4802",
+            "quantity": 50,
+            "unit_price": 23.77,
+            "amount": 1188.5
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "invalid_gstin",
+      "reason": "Vendor GSTIN failed: vendor GSTIN does not match the 15-character format",
+      "note": "vendor GSTIN does not match the 15-character format",
+      "scan_of": "inv_10.pdf"
+    },
+    "scanned/inv_12_scan.png": {
+      "category": "wrong_total",
+      "is_invoice": true,
+      "template": "boxed",
+      "expected": {
+        "vendor": "Kaveri Electricals LLP",
+        "vendor_gstin": "33AAKFK6644L1ZY",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "KEL/26-27/345",
+        "date": "2026-08-08",
+        "subtotal": 20925.7,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 3766.63,
+        "tax": 3766.63,
+        "total": 24629.33,
+        "line_items": [
+          {
+            "description": "LED Panel 40W",
+            "hsn": "9405",
+            "quantity": 50,
+            "unit_price": 197.23,
+            "amount": 9861.5
+          },
+          {
+            "description": "Copper Cable 2.5mm (m)",
+            "hsn": "8544",
+            "quantity": 20,
+            "unit_price": 553.21,
+            "amount": 11064.2
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "totals_mismatch",
+      "reason": "Totals/tax failed: grand total has transposed digits",
+      "note": "grand total has transposed digits",
+      "scan_of": "inv_12.pdf"
+    },
+    "scanned/inv_14_scan.jpg": {
+      "category": "high_amount",
+      "is_invoice": true,
+      "template": "classic",
+      "expected": {
+        "vendor": "Rajputana Office Mart",
+        "vendor_gstin": "08AARPR3078N1ZQ",
+        "buyer_gstin": "27AABFD4821K1ZI",
+        "invoice_no": "ROM/26-27/1008",
+        "date": "2026-08-28",
+        "subtotal": 59999.9,
+        "cgst": 0.0,
+        "sgst": 0.0,
+        "igst": 7199.99,
+        "tax": 7199.99,
+        "total": 67199.89,
+        "line_items": [
+          {
+            "description": "Stapler Heavy Duty",
+            "hsn": "8472",
+            "quantity": 40,
+            "unit_price": 919.76,
+            "amount": 36790.4
+          },
+          {
+            "description": "A4 Paper Ream",
+            "hsn": "4802",
+            "quantity": 50,
+            "unit_price": 464.19,
+            "amount": 23209.5
+          }
+        ]
+      },
+      "tax_type": "IGST",
+      "decision": "manual_review",
+      "reason_code": "amount_anomaly",
+      "reason": "Anomalous amount for this vendor: amount about 12x the vendor's typical invoice",
+      "note": "amount about 12x the vendor's typical invoice",
+      "scan_of": "inv_14.pdf"
+    }
+  }
+}

@@ -17,7 +17,7 @@ SGT = "27AAPFU0939F1ZV"  # typical amount ~15k
 def test_history_is_seeded():
     a = train_anomaly.generate_history(seed=7)
     b = train_anomaly.generate_history(seed=7)
-    assert all(np.array_equal(a[k], b[k]) for k in a) and len(a) == 10
+    assert all(np.array_equal(a[k], b[k]) for k in a) and len(a) == len(train_anomaly.VENDORS)
 
 
 def test_normal_amount_ok():

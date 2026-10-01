@@ -32,7 +32,8 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | `app/db/` | SQLAlchemy models/session (SQLite) |
 | `scripts/` | Training, synthetic data generation, eval harness |
 | `tests/` | pytest; LLM client is always mocked |
-| `data/samples/` | Synthetic invoices + ground-truth JSON |
+| `data/samples/` | Single sample invoice (digital + scanned) from `make_sample.py` |
+| `data/invoices/` | Phase 7 test set: 25 PDFs, 8 scans, `ground_truth.json` (see `data/README.md`) |
 | `models/` | Trained model artifacts (git-ignored) |
 
 ## Design rules (do not violate)
@@ -78,9 +79,10 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 2 Upload + extraction | done | `POST /invoices/upload`, `GET /jobs/{id}`, `jobs` table, SHA-256 file cache, BackgroundTasks pipeline, PyMuPDF text + RapidOCR fallback, sample generator + OCR viewer script |
 | 3 LLM extraction | done | One Gemini call → `InvoiceFields` (Pydantic), escalation to stronger model on low confidence / bad JSON |
 | 4 Validators + agent | done | Pure validators (line items, subtotal, GST rate, CGST/SGST vs IGST, grand total, GSTIN regex + mod-36 checksum, duplicate hash), provider-agnostic tool-calling interface + Gemini impl, agent loop with iteration cap + deterministic backstop, vendor master JSON. Verified live on gemini-3.5-flash-lite: all 6 tools called in 1 iteration (~1.8k tokens), duplicate caught across digital vs scanned PDF |
-| 5 Anomaly + router | done | Per-vendor IsolationForest (log amount) trained by `scripts/train_anomaly.py` on seeded synthetic history (10 vendors); real `flag_anomaly` with cold-start rule (amount > 5x overall median) for vendors with < 20 invoices; router → approve / manual_review / reject with config thresholds; `audit_log` table; console/Slack alert for review + reject |
+| 5 Anomaly + router | done | Per-vendor IsolationForest (log amount) trained by `scripts/train_anomaly.py` on seeded synthetic history (16 vendors); real `flag_anomaly` with cold-start rule (amount > 5x overall median) for vendors with < 20 invoices; router → approve / manual_review / reject with config thresholds; `audit_log` table; console/Slack alert for review + reject |
 | 6 Mock SAP + review queue | done | `/mock-sap/supplier-invoices` (validated, stored in `sap_documents`, fake 10-digit doc no. `51########`); `sap/payload.py` builder; `sap/client.py` (httpx, `SAP_BASE_URL`, retry w/ backoff, no retry on 4xx); `sap/posting.py` `post_job`; approved jobs auto-post in pipeline, SAP failure → `manual_review` with reason; `/reviews` queue (list/detail/approve/correct/reject) |
-| 7–10 | todo | data → eval → CI/Docker → deploy |
+| 7 Test data | done | `scripts/generate_invoices.py` (seeded, byte-reproducible): 25 PDFs / 8 vendors / 4 layouts, 8 scanned PNG/JPG, `data/invoices/ground_truth.json` (fields + decision + reason per file); 6 new vendors added to `vendors.json` and `train_anomaly.py`; offline check: 25/25 expected decisions match validators + router |
+| 8–10 | todo | eval → CI/Docker → deploy |
 
 ### Endpoints so far
 
@@ -149,6 +151,7 @@ copy .env.example .env                # then fill GEMINI_API_KEY
 uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /docs
 python scripts\train_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
+python scripts\generate_invoices.py   # writes data/invoices/ (25 PDFs, scanned/, ground_truth.json)
 python scripts\show_ocr.py data\samples\sample_scanned.png
 pytest -q                             # tests (~22 s; OCR slow; Gemini is mocked, no key needed)
 ruff check .                          # lint
@@ -203,6 +206,11 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
   Delete local `invoiceguard.db` after pulling Phase 6 (new columns, no migrations).
 - **Agent model:** `DEFAULT_MODEL` (no escalation for the agent loop).
 - Lint rule B008 is allowed for `fastapi.Depends/File/Query` (standard FastAPI idiom).
+- **Test set (Phase 7):** ground truth is keyed by filename; scanned files carry `scan_of`. Duplicates are
+  re-rendered in a different layout (same vendor/number/total) so the file-hash cache doesn't hide them.
+  Digital and scanned sets must be run on separate fresh DBs (scan = duplicate of its original).
+  Test-vendor GSTINs are computed with `gstin_check_char`; `data/vendors.json` and the `train_anomaly.py`
+  list must stay in sync with `VENDORS` in the generator (retrain after changing).
 
 ## Gotchas
 

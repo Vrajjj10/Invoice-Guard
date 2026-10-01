@@ -1,8 +1,11 @@
 [
-  {"gstin": "27AAPFU0939F1ZV", "name": "Shree Ganesh Traders Pvt Ltd", "state": "Maharashtra",
-   "status": "active", "payment_terms": "Net 30"},
-  {"gstin": "29AAGCB7383J1Z4", "name": "Bharat Industrial Supplies", "state": "Karnataka",
-   "status": "active", "payment_terms": "Net 45"},
-  {"gstin": "24AABCT1332L1ZK", "name": "Gujarat Polymers Ltd", "state": "Gujarat",
-   "status": "blocked", "payment_terms": "Net 30"}
+  {"gstin": "27AAPFU0939F1ZV", "name": "Shree Ganesh Traders Pvt Ltd", "state": "Maharashtra", "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "29AAGCB7383J1Z4", "name": "Bharat Industrial Supplies", "state": "Karnataka", "status": "active", "payment_terms": "Net 45"},
+  {"gstin": "24AABCT1332L1ZK", "name": "Gujarat Polymers Ltd", "state": "Gujarat", "status": "blocked", "payment_terms": "Net 30"},
+  {"gstin": "27AAKFK5512M1Z0", "name": "Konkan Fasteners & Tools", "state": "Maharashtra", "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "27AASPS7340Q1ZL", "name": "Sahyadri Packaging Co", "state": "Maharashtra", "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "36AADCD9921P1Z2", "name": "Deccan Hydraulics Pvt Ltd", "state": "Telangana", "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "08AARPR3078N1ZQ", "name": "Rajputana Office Mart", "state": "Rajasthan", "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "33AAKFK6644L1ZY", "name": "Kaveri Electricals LLP", "state": "Tamil Nadu", "status": "active", "payment_terms": "Net 30"},
+  {"gstin": "03AAHCH2257R1Z8", "name": "Himalaya Lubricants Ltd", "state": "Punjab", "status": "active", "payment_terms": "Net 30"}
 ]
