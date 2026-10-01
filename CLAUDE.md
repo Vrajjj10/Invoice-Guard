@@ -153,7 +153,7 @@ uvicorn app.main:app --reload         # API at http://127.0.0.1:8000, docs at /d
 python scripts\train_anomaly.py       # writes models/anomaly.joblib (needed for real anomaly scores)
 python scripts\make_sample.py         # writes data/samples/sample_*.{pdf,png}
 python scripts\generate_invoices.py   # writes data/invoices/ (25 PDFs, scanned/, ground_truth.json)
-python scriptsun_eval.py [--model gemini-3.5-flash] [--limit N]   # eval -> EVAL.md, eval_results.json
+python scripts\run_eval.py [--model gemini-3.5-flash] [--limit N]   # eval -> EVAL.md, eval_results.json
 python scripts\show_ocr.py data\samples\sample_scanned.png
 pytest -q                             # tests (~22 s; OCR slow; Gemini is mocked, no key needed)
 ruff check .                          # lint
