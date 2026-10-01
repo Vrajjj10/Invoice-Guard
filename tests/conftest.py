@@ -9,6 +9,7 @@ import pytest
 _tmp = Path(tempfile.mkdtemp(prefix="invoiceguard-test-"))
 os.environ["DATABASE_URL"] = f"sqlite:///{(_tmp / 'test.db').as_posix()}"
 os.environ["UPLOAD_DIR"] = str(_tmp / "uploads")
+os.environ["GEMINI_API_KEY"] = ""  # tests must never need (or use) a real key
 os.environ["ANOMALY_MODEL_PATH"] = str(_tmp / "none.joblib")  # untrained by default
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -55,3 +56,21 @@ def _no_real_agent_llm(monkeypatch):
             return ChatTurn("No issues.")
 
     monkeypatch.setattr(loop, "get_provider", lambda: _Silent())
+
+
+@pytest.fixture(autouse=True)
+def _mock_llm(monkeypatch):
+    """Mock LLM provider: the pipeline gets a fixed extraction, never a network call."""
+    from app import pipeline
+    from app.llm import client as llm_client
+    from tests.test_validators import _inv
+
+    monkeypatch.setattr(
+        pipeline, "extract_invoice",
+        lambda text, conf=None: llm_client.LLMResult(_inv(), "mock-model", False, 10, 1),
+    )
+
+    def _no_network():
+        raise AssertionError("tests must not create a real Gemini client")
+
+    monkeypatch.setattr(llm_client, "_get_client", _no_network)

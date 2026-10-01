@@ -83,7 +83,8 @@ upload (PDF/image) -> file-hash cache check -> background job (returns job_id im
 | 6 Mock SAP + review queue | done | `/mock-sap/supplier-invoices` (validated, stored in `sap_documents`, fake 10-digit doc no. `51########`); `sap/payload.py` builder; `sap/client.py` (httpx, `SAP_BASE_URL`, retry w/ backoff, no retry on 4xx); `sap/posting.py` `post_job`; approved jobs auto-post in pipeline, SAP failure → `manual_review` with reason; `/reviews` queue (list/detail/approve/correct/reject) |
 | 7 Test data | done | `scripts/generate_invoices.py` (seeded, byte-reproducible): 25 PDFs / 8 vendors / 4 layouts, 8 scanned PNG/JPG, `data/invoices/ground_truth.json` (fields + decision + reason per file); 6 new vendors added to `vendors.json` and `train_anomaly.py`; offline check: 25/25 expected decisions match validators + router |
 | 8 Eval harness | done | `scripts/run_eval.py`: runs `data/invoices/*` through the real `process_job` (SAP post stubbed), throttled + retried Gemini calls, disk cache by file hash + model (`data/eval/cache`, git-ignored), `--limit/--model/--delay/--report-only`; writes `eval_results.json` + `EVAL.md` |
-| 9–10 | todo | CI/Docker → deploy |
+| 9 CI/Docker | done | 122 tests, 98% coverage (`pytest --cov=app`), mock LLM autouse in `conftest.py` (no key/network); ruff clean; `Dockerfile` (3.11-slim, non-root, `/health` healthcheck, `$PORT`, anomaly model trained at build) + `.dockerignore`; `.github/workflows/ci.yml`: ruff → pytest → docker build + smoke → Render deploy hook (`RENDER_DEPLOY_HOOK_URL`, skipped if unset) on push to main; README badge |
+| 10 | todo | Deploy (Render) |
 
 ### Endpoints so far
 
@@ -216,6 +217,8 @@ curl.exe -F "file=@data/samples/sample_scanned.pdf" http://127.0.0.1:8000/invoic
 - **Eval (Phase 8):** digital and scanned sets run on separate fresh DBs (`data/eval/eval.db`). On a cache hit the agent LLM is replaced by the deterministic backstop (same verdicts). Free tier allows only 20 requests/day for `gemini-3.5-flash`, so the escalation run is partial (8 files; resumes from cache on later days). Paid cost uses assumed blended prices (`DEFAULT_PRICE` in the script). Default-model result: 33/33 decisions, 0 false approves, 100% field accuracy on synthetic data (upper bound).
 
 ## Gotchas
+
+- **Docker/`gh` were not installed on the dev machine in Phase 9**: the image was only ever built in CI. Tests need `GEMINI_API_KEY` empty; a local `.env` key once hid a test hitting the real API.
 
 - **PyMuPDF `get_text("text")` puts every table cell on its own line** — that's why we use
   `get_text("words")` + row regrouping instead.
